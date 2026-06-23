@@ -1,51 +1,121 @@
 "use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, ShieldCheck, Sparkles } from "lucide-react";
 import Navbar from "@/components/common/Navbar";
 import BottomNav from "@/components/common/BottomNav";
 import TeaCard from "@/components/feed/TeaCard";
 import { useAnonymousUser } from "@/hooks/useAnonymousUser";
+import { supabase } from "@/lib/supabase";
 
-const teaPosts = [
-  {
-    id: 1,
-    author: "Anonymous Panda",
-    emoji: "🐼",
-    time: "2 min ago",
-    type: "Workplace Tea",
-    content:
-      "My manager took credit for my idea in today’s meeting and everyone clapped for him. I am just sitting here pretending to be fine.",
-    likes: 128,
-    comments: 34,
-  },
-  {
-    id: 2,
-    author: "Anonymous Fox",
-    emoji: "🦊",
-    time: "12 min ago",
-    type: "Relationship Tea",
-    content:
-      "He said he was busy, but his location was at the same cafe where his ex usually goes. Should I ask or stay silent?",
-    likes: 94,
-    comments: 41,
-  },
-  {
-    id: 3,
-    author: "Anonymous Owl",
-    emoji: "🦉",
-    time: "28 min ago",
-    type: "College Tea",
-    content:
-      "Group project ka pura kaam maine kiya, presentation ke time sab bol rahe the ‘we worked so hard’. I need emotional support.",
-    likes: 211,
-    comments: 63,
-  },
-];
+type TeaPost = {
+  id: string;
+  content: string | null;
+  likes_count: number | null;
+  comments_count: number | null;
+  created_at: string | null;
+  media_url: string | null;
+  media_type: string | null;
+  category: string | null;
+  media_items: {
+    url: string;
+    type: string;
+    name?: string;
+  }[] | null;
+  anonymous_users: {
+    anonymous_name: string;
+    avatar: string | null;
+  } | null;
+};
+
+function getEmoji(name?: string | null) {
+  if (!name) return "☕";
+  const parts = name.split(" ");
+  return parts[parts.length - 1] || "☕";
+}
+
+function formatTime(dateString?: string | null) {
+  if (!dateString) return "Just now";
+
+  const createdAt = new Date(dateString).getTime();
+  const now = Date.now();
+  const diffInSeconds = Math.max(Math.floor((now - createdAt) / 1000), 0);
+
+  if (diffInSeconds < 60) return "Just now";
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hr ago`;
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+
+  return new Date(dateString).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 const categories = ["All", "College", "Work", "Relationship", "Confession", "Family"];
 
 export default function Home() {
   const username = useAnonymousUser();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const [teaPosts, setTeaPosts] = useState<TeaPost[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          id,
+          content,
+          likes_count,
+          comments_count,
+          created_at,
+          media_url,
+          media_type,
+          category,
+          media_items,
+          anonymous_users (
+            anonymous_name,
+            avatar
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch posts:", error.message);
+        setLoadingPosts(false);
+        return;
+      }
+
+      setTeaPosts((data || []) as unknown as TeaPost[]);
+      setLoadingPosts(false);
+    };
+
+    fetchPosts();
+  }, []);
+
+  const filteredPosts = teaPosts.filter((post) => {
+    const content = post.content?.toLowerCase() || "";
+    const search = searchQuery.toLowerCase().trim();
+    const category = post.category?.toLowerCase() || "random";
+
+    const matchesSearch = search ? content.includes(search) : true;
+    const matchesCategory =
+      selectedCategory === "All" ? true : category === selectedCategory.toLowerCase();
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <main className="min-h-screen bg-[#0c0611] text-white">
@@ -67,17 +137,17 @@ export default function Home() {
               <p className="mt-4 max-w-2xl text-base leading-7 text-white/60 md:text-lg">
                 Share confessions, daily drama, stories, thoughts, images, voice notes and videos — without revealing your identity.
               </p>
-              {username && (
-                <p className="mt-4 inline-flex rounded-full border border-purple-300/20 bg-purple-500/10 px-4 py-2 text-sm text-purple-100">
-                  Welcome, {username}
-                </p>
-              )}
+              <p className="mt-4 inline-flex rounded-full border border-purple-300/20 bg-purple-500/10 px-4 py-2 text-sm text-purple-100">
+                Welcome, {username}
+              </p>
             </div>
 
             <div className="mt-6 flex flex-col gap-3 rounded-3xl border border-white/10 bg-black/20 p-3 sm:flex-row">
               <div className="flex flex-1 items-center gap-3 rounded-2xl bg-white/5 px-4 py-3 text-white/40">
                 <Search size={18} />
                 <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search anonymous tea..."
                   className="w-full bg-transparent text-white outline-none placeholder:text-white/35"
                 />
@@ -95,8 +165,9 @@ export default function Home() {
             {categories.map((category) => (
               <button
                 key={category}
+                onClick={() => setSelectedCategory(category)}
                 className={`shrink-0 rounded-full border px-5 py-2 text-sm transition ${
-                  category === "All"
+                  selectedCategory === category
                     ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
                     : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
                 }`}
@@ -123,19 +194,40 @@ export default function Home() {
           </div>
 
           <div className="space-y-5">
-            {teaPosts.map((post) => (
-              <TeaCard
-                key={post.id}
-                id={post.id}
-                author={post.author}
-                emoji={post.emoji}
-                time={post.time}
-                type={post.type}
-                content={post.content}
-                likes={post.likes}
-                comments={post.comments}
-              />
-            ))}
+            {loadingPosts && (
+              <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 text-white/60 backdrop-blur-xl">
+                Loading fresh tea...
+              </div>
+            )}
+
+            {!loadingPosts && filteredPosts.length === 0 && (
+              <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 text-center backdrop-blur-xl">
+                <h3 className="text-xl font-bold">☕ No tea found</h3>
+                <p className="mt-2 text-white/55">Try another search or category.</p>
+              </div>
+            )}
+
+            {!loadingPosts &&
+              filteredPosts.map((post) => {
+                const author = post.anonymous_users?.anonymous_name || "Anonymous User";
+
+                return (
+                  <TeaCard
+                    key={post.id}
+                    id={post.id}
+                    author={author}
+                    emoji={getEmoji(author)}
+                    time={formatTime(post.created_at)}
+                    type={post.category || `${post.media_type || "text"} Tea`}
+                    content={post.content || ""}
+                    likes={post.likes_count || 0}
+                    comments={post.comments_count || 0}
+                    mediaUrl={post.media_url}
+                    mediaType={post.media_type}
+                    mediaItems={post.media_items || []}
+                  />
+                );
+              })}
           </div>
         </div>
 
@@ -175,4 +267,4 @@ export default function Home() {
       <BottomNav />
     </main>
   );
-}
+}   
