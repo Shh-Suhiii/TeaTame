@@ -6,7 +6,6 @@ import { Search, Sparkles } from "lucide-react";
 import Navbar from "@/components/common/Navbar";
 import BottomNav from "@/components/common/BottomNav";
 import TeaCard from "@/components/feed/TeaCard";
-import { useAnonymousUser } from "@/hooks/useAnonymousUser";
 import { supabase } from "@/lib/supabase";
 
 type TeaPost = {
@@ -63,7 +62,6 @@ function formatTime(dateString?: string | null) {
 const categories = ["All", "College", "Work", "Relationship", "Confession", "Family"];
 
 export default function Home() {
-  const username = useAnonymousUser();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");

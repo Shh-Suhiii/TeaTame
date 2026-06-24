@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
@@ -234,6 +235,7 @@ export default function TeaCard({
             onClick={(event) => event.stopPropagation()}
           >
             {previewMedia.type === "image" && (
+               
               <img
                 src={previewMedia.url}
                 alt={previewMedia.name || "Tea media preview"}
