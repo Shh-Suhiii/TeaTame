@@ -72,7 +72,7 @@ export default function TeaDetailPage() {
   const params = useParams();
   const postId = params.id as string;
 
-  const likeKey = `teatime_liked_${postId}`;
+  const likeKey = `TeaTame_liked_${postId}`;
   const [isLiked, setIsLiked] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(likeKey) === "true";
@@ -145,7 +145,7 @@ export default function TeaDetailPage() {
       return;
     }
 
-    const savedUser = localStorage.getItem("teatime_user");
+    const savedUser = localStorage.getItem("TeaTame_user");
 
     if (!savedUser) {
       alert("Anonymous user not found.");

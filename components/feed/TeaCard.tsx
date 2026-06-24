@@ -36,7 +36,7 @@ export default function TeaCard({
   mediaType,
   mediaItems,
 }: TeaCardProps) {
-  const likeKey = `teatime_liked_${id}`;
+  const likeKey = `TeaTame_liked_${id}`;
   const [likesCount, setLikesCount] = useState(likes);
   const [isUpdatingLike, setIsUpdatingLike] = useState(false);
   const [isLiked, setIsLiked] = useState(() => {
@@ -211,7 +211,7 @@ export default function TeaCard({
           className="ml-auto inline-flex items-center gap-2 rounded-full border border-purple-300/25 px-4 py-2 text-sm text-purple-100 transition hover:bg-purple-500/15"
         >
           <Headphones size={16} />
-          Talk to TeaTime
+          Talk to TeaTame
         </Link>
       </div>
 

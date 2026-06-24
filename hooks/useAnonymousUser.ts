@@ -10,7 +10,7 @@ export function useAnonymousUser() {
   useEffect(() => {
     const createUser = async () => {
       try {
-        const saved = localStorage.getItem("teatime_user");
+        const saved = localStorage.getItem("TeaTame_user");
 
         if (saved) {
           const user = JSON.parse(saved);
@@ -34,13 +34,13 @@ export function useAnonymousUser() {
           setUsername(anonymous_name);
 
           localStorage.setItem(
-            "teatime_user",
+            "TeaTame_user",
             JSON.stringify({ anonymous_name })
           );
           return;
         }
 
-        localStorage.setItem("teatime_user", JSON.stringify(data));
+        localStorage.setItem("TeaTame_user", JSON.stringify(data));
         setUsername(data.anonymous_name);
       } catch (err) {
         console.error(err);

@@ -31,7 +31,7 @@ type MediaItem = {
 };
 
 async function getOrCreateAnonymousUser() {
-  const savedUser = localStorage.getItem("teatime_user");
+  const savedUser = localStorage.getItem("TeaTame_user");
 
   if (savedUser) {
     const parsedUser = JSON.parse(savedUser);
@@ -53,7 +53,7 @@ async function getOrCreateAnonymousUser() {
 
     if (error) throw error;
 
-    localStorage.setItem("teatime_user", JSON.stringify(data));
+    localStorage.setItem("TeaTame_user", JSON.stringify(data));
     return data;
   }
 
@@ -70,7 +70,7 @@ async function getOrCreateAnonymousUser() {
 
   if (error) throw error;
 
-  localStorage.setItem("teatime_user", JSON.stringify(data));
+  localStorage.setItem("TeaTame_user", JSON.stringify(data));
   return data;
 }
 
@@ -250,7 +250,7 @@ export default function CreateTeaForm() {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
           <NextImage
             src="/logo3.png"
-            alt="TeaTime Logo"
+            alt="TeaTame Logo"
             width={56}
             height={56}
             className="h-9 w-9 object-contain"

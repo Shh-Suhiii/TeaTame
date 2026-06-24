@@ -15,7 +15,7 @@ type Message = {
   created_at: string | null;
 };
 
-type TeaTimeUser = {
+type TeaTameUser = {
   id?: string;
   anonymous_name?: string;
 };
@@ -32,11 +32,11 @@ function getBotReply(userMessage: string) {
   const text = userMessage.toLowerCase();
 
   if (text.includes("request post deletion")) {
-    return "Sure. Please send the post details, why it should be deleted, and any extra context. TeaTime will review it.";
+    return "Sure. Please send the post details, why it should be deleted, and any extra context. TeaTame will review it.";
   }
 
   if (text.includes("report a comment")) {
-    return "Please share which comment you want to report and the reason. TeaTime will review it.";
+    return "Please share which comment you want to report and the reason. TeaTame will review it.";
   }
 
   if (text.includes("report a bug")) {
@@ -44,11 +44,11 @@ function getBotReply(userMessage: string) {
   }
 
   if (text.includes("contact admin")) {
-    return "You can write your message here. TeaTime admin can review this chat from the admin dashboard.";
+    return "You can write your message here. TeaTame admin can review this chat from the admin dashboard.";
   }
 
   if (text.includes("delete") || text.includes("remove")) {
-    return "I understand. If something needs to be removed, TeaTime will review it. You can also report unsafe content anytime.";
+    return "I understand. If something needs to be removed, TeaTame will review it. You can also report unsafe content anytime.";
   }
 
   if (text.includes("help") || text.includes("issue") || text.includes("problem")) {
@@ -56,14 +56,14 @@ function getBotReply(userMessage: string) {
   }
 
   if (text.includes("hi") || text.includes("hello") || text.includes("hey")) {
-    return "Hey, welcome to TeaTime support ☕ How can I help you today?";
+    return "Hey, welcome to TeaTame support ☕ How can I help you today?";
   }
 
   if (text.includes("anonymous") || text.includes("privacy")) {
-    return "TeaTime is designed to keep your identity private. Still, avoid sharing names, phone numbers, addresses, or personal details.";
+    return "TeaTame is designed to keep your identity private. Still, avoid sharing names, phone numbers, addresses, or personal details.";
   }
 
-  return "Thanks for sharing this with TeaTime ☕ We’ll review your request and get back to you if more details are needed.";
+  return "Thanks for sharing this with TeaTame ☕ We’ll review your request and get back to you if more details are needed.";
 }
 
 function formatChatTime(dateString?: string | null) {
@@ -76,10 +76,10 @@ function formatChatTime(dateString?: string | null) {
 }
 
 async function getOrCreateAnonymousUser() {
-  const savedUser = localStorage.getItem("teatime_user");
+  const savedUser = localStorage.getItem("TeaTame_user");
 
   if (savedUser) {
-    const parsedUser = JSON.parse(savedUser) as TeaTimeUser;
+    const parsedUser = JSON.parse(savedUser) as TeaTameUser;
 
     if (parsedUser?.id) {
       return parsedUser;
@@ -98,7 +98,7 @@ async function getOrCreateAnonymousUser() {
 
     if (error) throw error;
 
-    localStorage.setItem("teatime_user", JSON.stringify(data));
+    localStorage.setItem("TeaTame_user", JSON.stringify(data));
     return data;
   }
 
@@ -115,14 +115,14 @@ async function getOrCreateAnonymousUser() {
 
   if (error) throw error;
 
-  localStorage.setItem("teatime_user", JSON.stringify(data));
+  localStorage.setItem("TeaTame_user", JSON.stringify(data));
   return data;
 }
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
-  const [currentUser, setCurrentUser] = useState<TeaTimeUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<TeaTameUser | null>(null);
   const [chatId, setChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -173,7 +173,7 @@ export default function ChatPage() {
     if (!chatId) return;
 
     const channel = supabase
-      .channel(`teatime-support-chat-${chatId}`)
+      .channel(`TeaTame-support-chat-${chatId}`)
       .on(
         "postgres_changes",
         {
@@ -282,7 +282,7 @@ export default function ChatPage() {
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
               <Image
                 src="/logo3.png"
-                alt="TeaTime Logo"
+                alt="TeaTame Logo"
                 width={56}
                 height={56}
                 priority
@@ -291,7 +291,7 @@ export default function ChatPage() {
             </div>
 
             <div className="min-w-0">
-              <h1 className="truncate font-semibold">Talk to TeaTime</h1>
+              <h1 className="truncate font-semibold">Talk to TeaTame</h1>
               <p className="truncate text-xs text-green-300">
                 ● AI support online • {currentUser?.anonymous_name || "Anonymous User"}
               </p>
@@ -307,7 +307,7 @@ export default function ChatPage() {
         <div className="border-b border-white/10 bg-green-400/10 px-5 py-3 text-sm text-green-100">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} />
-            TeaTime AI can reply instantly. Avoid sharing personal details.
+            TeaTame AI can reply instantly. Avoid sharing personal details.
           </div>
         </div>
 
@@ -323,9 +323,9 @@ export default function ChatPage() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/15">
                 <Sparkles className="text-purple-200" />
               </div>
-              <h2 className="text-xl font-bold">Ask TeaTime privately</h2>
+              <h2 className="text-xl font-bold">Ask TeaTame privately</h2>
               <p className="mt-2 text-sm leading-6 text-white/50">
-                Choose a quick option or type your issue. TeaTime AI replies instantly.
+                Choose a quick option or type your issue. TeaTame AI replies instantly.
               </p>
             </div>
           )}

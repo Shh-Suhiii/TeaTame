@@ -56,10 +56,10 @@ type Message = {
   created_at: string | null;
 };
 
-const ADMIN_PASSWORD = "teatime-admin";
+const ADMIN_PASSWORD = "TeaTame-admin";
 
 const ADMIN_ID = "00000000-0000-0000-0000-000000000000";
-const BOT_LABEL = "TeaTime AI";
+const BOT_LABEL = "TeaTame AI";
 
 
 function formatDate(dateString?: string | null) {
@@ -378,7 +378,7 @@ const fetchChats = async () => {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
               <Image
                 src="/logo3.png"
-                alt="TeaTime Logo"
+                alt="TeaTame Logo"
                 width={56}
                 height={56}
                 priority
@@ -386,7 +386,7 @@ const fetchChats = async () => {
               />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">TeaTime Admin</h1>
+              <h1 className="text-2xl font-bold">TeaTame Admin</h1>
               <p className="text-sm text-white/45">Moderate posts, comments, and chats.</p>
             </div>
           </div>
@@ -437,7 +437,7 @@ const fetchChats = async () => {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
               <Image
                 src="/logo3.png"
-                alt="TeaTime Logo"
+                alt="TeaTame Logo"
                 width={56}
                 height={56}
                 priority
@@ -447,7 +447,7 @@ const fetchChats = async () => {
 
             <div>
               <h1 className="text-xl font-bold leading-none md:text-2xl">Admin Dashboard</h1>
-              <p className="mt-1 text-xs text-white/45">Manage TeaTime safely.</p>
+              <p className="mt-1 text-xs text-white/45">Manage TeaTame safely.</p>
             </div>
           </div>
 
@@ -650,7 +650,7 @@ const visibleMessage = msg.message.replace(/^\[ADMIN\]\s*/, "");
                         onKeyDown={(event) => {
                           if (event.key === "Enter") sendReply();
                         }}
-                        placeholder="Reply as TeaTime admin..."
+                        placeholder="Reply as TeaTame admin..."
                         className="flex-1 bg-transparent text-white outline-none placeholder:text-white/35"
                       />
                       <button

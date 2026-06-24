@@ -73,7 +73,7 @@ export default function ProfilePage() {
           <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Coffee className="text-purple-200" />
-              <span>TeaTime Guidelines</span>
+              <span>TeaTame Guidelines</span>
             </div>
             <ChevronRight size={18} />
           </div>

@@ -10,7 +10,7 @@ export default function Navbar() {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
             <Image
               src="/logo3.png"
-              alt="TeaTime Logo"
+              alt="TeaTame Logo"
               width={56}
               height={56}
               priority
@@ -19,7 +19,7 @@ export default function Navbar() {
           </div>
 
           <div>
-            <h1 className="text-xl font-bold leading-none text-white md:text-2xl">TeaTime</h1>
+            <h1 className="text-xl font-bold leading-none text-white md:text-2xl">TeaTame</h1>
             <p className="mt-1 text-[11px] text-zinc-500 md:text-xs">Spill it. Stay anonymous.</p>
           </div>
         </Link>
