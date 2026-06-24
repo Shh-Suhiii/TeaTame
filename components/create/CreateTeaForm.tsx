@@ -13,12 +13,13 @@ import {
   Video,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import NextImage from "next/image";
 
 const teaTypes = [
-  { title: "Text", value: "text", icon: Type },
-  { title: "Images", value: "image", icon: Image },
-  { title: "Videos", value: "video", icon: Video },
-  { title: "Voice", value: "audio", icon: Mic },
+  { title: "Text", value: "text", icon: Type, hint: "Write a confession" },
+  { title: "Images", value: "image", icon: Image, hint: "Add photos" },
+  { title: "Videos", value: "video", icon: Video, hint: "Add short clips" },
+  { title: "Voice", value: "audio", icon: Mic, hint: "Record audio" },
 ];
 
 const categories = ["College", "Work", "Relationship", "Confession", "Family", "Random"];
@@ -86,6 +87,7 @@ export default function CreateTeaForm() {
   const [activeType, setActiveType] = useState("text");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -96,7 +98,13 @@ export default function CreateTeaForm() {
     if (!files) return;
 
     const incomingFiles = Array.from(files);
-    setSelectedFiles((prev) => [...prev, ...incomingFiles]);
+    const acceptedFiles = incomingFiles.filter((file) => {
+      if (activeType === "image") return file.type.startsWith("image/");
+      if (activeType === "video") return file.type.startsWith("video/");
+      return true;
+    });
+
+    setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
   };
 
   const removeFile = (index: number) => {
@@ -158,11 +166,13 @@ export default function CreateTeaForm() {
     setSelectedFiles([]);
     setRecordedAudioUrl("");
     setIsRecording(false);
+    setStatusMessage("");
   };
 
   const handleSubmit = async () => {
+    setStatusMessage("");
     if (!content.trim() && selectedFiles.length === 0) {
-      alert("Please write text, upload media, or record voice first ☕");
+      setStatusMessage("Please write text, upload media, or record voice first ☕");
       return;
     }
 
@@ -174,7 +184,7 @@ export default function CreateTeaForm() {
       user = await getOrCreateAnonymousUser();
     } catch (error) {
       console.error(error);
-      alert("Anonymous user could not be created.");
+      setStatusMessage("Anonymous user could not be created.");
       setLoading(false);
       return;
     }
@@ -194,7 +204,7 @@ export default function CreateTeaForm() {
 
       if (uploadError) {
         console.error(uploadError);
-        alert("Failed to upload one of the media files.");
+        setStatusMessage("Failed to upload one of the media files.");
         setLoading(false);
         return;
       }
@@ -226,17 +236,35 @@ export default function CreateTeaForm() {
 
     if (error) {
       console.error(error);
-      alert("Failed to post tea.");
+      setStatusMessage("Failed to post tea.");
       return;
     }
 
-    alert("Tea posted successfully ☕");
     clearForm();
+    setStatusMessage("Tea posted successfully ☕");
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-4">
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-black/20 p-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
+          <NextImage
+            src="/logo3.png"
+            alt="TeaTime Logo"
+            width={56}
+            height={56}
+            className="h-9 w-9 object-contain"
+          />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold text-white">Create Your Tea</h2>
+          <p className="text-sm text-zinc-400">
+            Spill safely. Stay anonymous.
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {teaTypes.map((type) => {
           const Icon = type.icon;
 
@@ -245,14 +273,15 @@ export default function CreateTeaForm() {
               key={type.title}
               type="button"
               onClick={() => setActiveType(type.value)}
-              className={`rounded-3xl border p-5 text-left transition ${
+              className={`rounded-3xl border p-4 text-left transition md:p-5 ${
                 activeType === type.value
                   ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
                   : "border-white/10 bg-black/20 hover:border-purple-300/40 hover:bg-purple-500/10"
               }`}
             >
-              <Icon className="mb-4 text-purple-200" />
+              <Icon className="mb-3 text-purple-200" />
               <h3 className="font-semibold">{type.title}</h3>
+              <p className="mt-1 text-xs text-white/40">{type.hint}</p>
               {activeType === type.value && (
                 <p className="mt-2 text-xs text-purple-200">Selected</p>
               )}
@@ -261,9 +290,9 @@ export default function CreateTeaForm() {
         })}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <label className="block text-sm font-medium text-white/70">
-          Choose category
+          Category
         </label>
         <div className="flex flex-wrap gap-3">
           {categories.map((item) => (
@@ -271,7 +300,7 @@ export default function CreateTeaForm() {
               key={item}
               type="button"
               onClick={() => setCategory(item)}
-              className={`rounded-full border px-4 py-2 text-sm transition ${
+              className={`rounded-full border px-4 py-2 text-xs transition md:text-sm ${
                 category === item
                   ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
                   : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
@@ -286,12 +315,17 @@ export default function CreateTeaForm() {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="Text/caption/context yahan spill karo..."
-        className="min-h-44 w-full resize-none rounded-3xl border border-white/10 bg-black/25 p-5 text-white outline-none placeholder:text-white/30"
+        maxLength={1000}
+        placeholder="Spill your tea here... add caption, context, or story."
+        className="min-h-36 w-full resize-none rounded-3xl border border-white/10 bg-black/25 p-5 text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 md:min-h-44"
       />
+      <div className="flex justify-between text-xs text-white/40">
+        <span>Keep it anonymous. Avoid real names or personal details.</span>
+        <span>{content.length}/1000</span>
+      </div>
 
       {(activeType === "image" || activeType === "video") && (
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-black/20 p-8 text-center transition hover:border-purple-300/40 hover:bg-purple-500/10">
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-black/20 p-6 text-center transition hover:border-purple-300/40 hover:bg-purple-500/10 md:p-8">
           <input
             type="file"
             multiple
@@ -306,13 +340,13 @@ export default function CreateTeaForm() {
           )}
           <p className="font-medium">Add {activeType === "image" ? "images" : "videos"}</p>
           <p className="mt-1 text-sm text-white/40">
-            You can combine text, images, videos, and voice in one tea.
+            Add multiple files. You can also switch tabs and add voice/text.
           </p>
         </label>
       )}
 
       {activeType === "audio" && (
-        <div className="rounded-3xl border border-dashed border-white/15 bg-black/20 p-6 text-center">
+        <div className="rounded-3xl border border-dashed border-white/15 bg-black/20 p-5 text-center md:p-6">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-500/20">
             {isRecording ? (
               <Pause className="text-purple-100" />
@@ -359,25 +393,53 @@ export default function CreateTeaForm() {
 
       {selectedFiles.length > 0 && (
         <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-white/70">
-            <FileImage size={16} />
-            Attached media ({selectedFiles.length})
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-white/70">
+              <FileImage size={16} />
+              Attached media ({selectedFiles.length})
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedFiles([]);
+                setRecordedAudioUrl("");
+              }}
+              className="text-xs text-white/40 transition hover:text-white"
+            >
+              Clear all
+            </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="grid gap-2 md:grid-cols-2">
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
                 className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 px-4 py-3 text-sm text-white/70"
               >
-                <span className="truncate">
-                  {getFileType(file) === "image"
-                    ? "🖼️"
-                    : getFileType(file) === "video"
-                      ? "🎥"
-                      : "🎤"}{" "}
-                  {file.name}
-                </span>
+                <div className="flex min-w-0 items-center gap-3">
+                  {getFileType(file) === "image" ? (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                    />
+                  ) : getFileType(file) === "video" ? (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg">
+                      🎥
+                    </div>
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg">
+                      🎤
+                    </div>
+                  )}
+
+                  <div className="min-w-0">
+                    <p className="truncate text-white/75">{file.name}</p>
+                    <p className="text-xs text-white/35">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
@@ -391,10 +453,15 @@ export default function CreateTeaForm() {
         </div>
       )}
 
+      {statusMessage && (
+        <div className="rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm text-purple-100">
+          {statusMessage}
+        </div>
+      )}
       <button
         onClick={handleSubmit}
-        disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500 px-5 py-4 font-semibold disabled:opacity-50"
+        disabled={loading || (!content.trim() && selectedFiles.length === 0)}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/20 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Send size={18} />
         {loading ? "Posting..." : "Post Tea"}
