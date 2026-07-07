@@ -7,6 +7,7 @@ import { ArrowLeft, Flag, Send, ShieldCheck, Sparkles } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import BottomNav from "@/components/common/BottomNav";
 import { supabase } from "@/lib/supabase";
+import { generateAnonymousName } from "@/lib/anonymous-user";
 
 type Message = {
   id: string;
@@ -75,48 +76,41 @@ function formatChatTime(dateString?: string | null) {
   });
 }
 
+function getEmojiFromName(name: string) {
+  const emojiMatch = name.match(/[\u{1F300}-\u{1FAFF}]/u);
+  return emojiMatch?.[0] || "☕";
+}
+
 async function getOrCreateAnonymousUser() {
   const savedUser = localStorage.getItem("TeaTame_user");
 
   if (savedUser) {
-    const parsedUser = JSON.parse(savedUser) as TeaTameUser;
+    try {
+      const parsedUser = JSON.parse(savedUser) as TeaTameUser;
 
-    if (parsedUser?.id) {
-      return parsedUser;
+      if (parsedUser?.id && parsedUser?.anonymous_name !== "Anonymous User") {
+        return parsedUser;
+      }
+    } catch {
+      localStorage.removeItem("TeaTame_user");
     }
-
-    const anonymousName = parsedUser?.anonymous_name || "Anonymous User";
-
-    const { data, error } = await supabase
-      .from("anonymous_users")
-      .insert({
-        anonymous_name: anonymousName,
-        avatar: anonymousName,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    localStorage.setItem("TeaTame_user", JSON.stringify(data));
-    return data;
   }
 
-  const anonymousName = "Anonymous User";
+  const anonymousName = generateAnonymousName();
 
   const { data, error } = await supabase
     .from("anonymous_users")
     .insert({
       anonymous_name: anonymousName,
-      avatar: anonymousName,
+      avatar: getEmojiFromName(anonymousName),
     })
-    .select()
+    .select("id, anonymous_name")
     .single();
 
   if (error) throw error;
 
   localStorage.setItem("TeaTame_user", JSON.stringify(data));
-  return data;
+  return data as TeaTameUser;
 }
 
 export default function ChatPage() {
@@ -128,11 +122,30 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messageInputRef = useRef<HTMLInputElement | null>(null);
+
+  const getSupportPrefill = () => {
+    const prefill = localStorage.getItem("TeaTame_support_prefill");
+    if (prefill) {
+      localStorage.removeItem("TeaTame_support_prefill");
+    }
+    return prefill || "";
+  };
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const prefill = getSupportPrefill();
+      if (prefill) setMessage(prefill);
+    }, 0);
+
     const setupChat = async () => {
       try {
         const user = await getOrCreateAnonymousUser();
+        if (!user) {
+          setStatusMessage("Could not identify user.");
+          setLoading(false);
+          return;
+        }
         setCurrentUser(user);
 
         const privateChatId = user.id as string;
@@ -167,6 +180,8 @@ export default function ChatPage() {
     };
 
     setupChat();
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -209,58 +224,66 @@ export default function ChatPage() {
     setSending(true);
     setStatusMessage("");
 
-    const { data: sentMessage, error } = await supabase
-      .from("messages")
-      .insert({
-        chat_id: chatId,
-        sender_id: currentUser.id,
-        message: messageText,
-      })
-      .select("id, sender_id, message, created_at")
-      .single();
+    try {
+      const { data: sentMessage, error } = await supabase
+        .from("messages")
+        .insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          message: messageText,
+        })
+        .select("id, sender_id, message, created_at")
+        .single();
 
-    if (error) {
-      console.error("Message send failed:", error.message);
-      setStatusMessage("Message could not be sent.");
+      if (error) {
+        console.error("Message send failed:", error.message);
+        setStatusMessage("Message could not be sent.");
+        setMessage(messageText);
+        setSending(false);
+        return;
+      }
+
+      if (sentMessage) {
+        setMessages((prev) => {
+          const exists = prev.some((item) => item.id === sentMessage.id);
+          return exists ? prev : [...prev, sentMessage as Message];
+        });
+      }
+
+      window.setTimeout(async () => {
+        try {
+          const { data: botMessage, error: botError } = await supabase
+            .from("messages")
+            .insert({
+              chat_id: chatId,
+              sender_id: null,
+              message: getBotReply(messageText),
+            })
+            .select("id, sender_id, message, created_at")
+            .single();
+
+          if (botError) {
+            console.error("Bot reply failed:", botError.message);
+            return;
+          }
+
+          if (botMessage) {
+            setMessages((prev) => {
+              const exists = prev.some((item) => item.id === botMessage.id);
+              return exists ? prev : [...prev, botMessage as Message];
+            });
+          }
+        } catch (error) {
+          console.error("Bot reply failed:", error);
+        }
+      }, 900);
+    } catch (error) {
+      console.error("Send message exception:", error);
+      setStatusMessage("Something went wrong. Please try again.");
       setMessage(messageText);
       setSending(false);
       return;
     }
-
-    if (sentMessage) {
-      setMessages((prev) => {
-        const exists = prev.some((item) => item.id === sentMessage.id);
-        return exists ? prev : [...prev, sentMessage as Message];
-      });
-    }
-
-    window.setTimeout(async () => {
-      try {
-        const { data: botMessage, error: botError } = await supabase
-          .from("messages")
-          .insert({
-            chat_id: chatId,
-            sender_id: null,
-            message: getBotReply(messageText),
-          })
-          .select("id, sender_id, message, created_at")
-          .single();
-
-        if (botError) {
-          console.error("Bot reply failed:", botError.message);
-          return;
-        }
-
-        if (botMessage) {
-          setMessages((prev) => {
-            const exists = prev.some((item) => item.id === botMessage.id);
-            return exists ? prev : [...prev, botMessage as Message];
-          });
-        }
-      } catch (error) {
-        console.error("Bot reply failed:", error);
-      }
-    }, 900);
 
     setSending(false);
   };
@@ -340,7 +363,12 @@ export default function ChatPage() {
                   <button
                     key={option}
                     type="button"
-                    onClick={() => setMessage(option)}
+                    onClick={() => {
+                      setMessage(option);
+                      setTimeout(() => {
+                        messageInputRef.current?.focus();
+                      }, 0);
+                    }}
                     className="rounded-full border border-purple-300/20 bg-purple-500/10 px-4 py-2 text-sm text-purple-100 transition hover:bg-purple-500/20"
                   >
                     {option}
@@ -372,10 +400,14 @@ export default function ChatPage() {
         <footer className="border-t border-white/10 bg-black/10 p-4">
           <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/25 px-4 py-3 transition focus-within:border-purple-300/40">
             <input
+              ref={messageInputRef}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") sendMessage();
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  sendMessage();
+                }
               }}
               placeholder="Describe your issue or choose a quick option..."
               className="flex-1 bg-transparent text-white outline-none placeholder:text-white/35"

@@ -62,8 +62,16 @@ function getSavedUser() {
   if (!saved) return null;
 
   try {
-    return JSON.parse(saved) as TeaTameUser;
+    const parsedUser = JSON.parse(saved) as TeaTameUser;
+
+    if (!parsedUser?.id || parsedUser.anonymous_name === "Anonymous User") {
+      localStorage.removeItem("TeaTame_user");
+      return null;
+    }
+
+    return parsedUser;
   } catch {
+    localStorage.removeItem("TeaTame_user");
     return null;
   }
 }
@@ -123,6 +131,8 @@ function safetyNotification(): NotificationItem {
 
 function syncNotificationBadge(items: NotificationItem[]) {
   const unreadItems = items.filter((item) => !item.isRead);
+  if (typeof window === "undefined") return;
+
   localStorage.setItem("TeaTame_notification_count", String(unreadItems.length));
   window.dispatchEvent(new Event("teatame-notifications-updated"));
 }
@@ -306,6 +316,8 @@ export default function NotificationsPage() {
   };
 
   const markAllRead = () => {
+    if (notifications.length === 0) return;
+
     const allIds = notifications.map((item) => item.id);
     saveReadIds(allIds);
     const nextNotifications = notifications.map((item) => ({ ...item, isRead: true }));
@@ -346,7 +358,8 @@ export default function NotificationsPage() {
           <button
             type="button"
             onClick={markAllRead}
-            className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70 transition hover:bg-white/10 hover:text-white"
+            disabled={unreadCount === 0}
+            className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
           >
             <CheckCheck size={14} className="mr-1 inline" />
             <span className="hidden sm:inline">Mark all read</span>
@@ -404,7 +417,9 @@ export default function NotificationsPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => markOneRead(item.id)}
+                  onClick={() => {
+                    if (!item.isRead) markOneRead(item.id);
+                  }}
                   className={`group w-full rounded-3xl border p-4 text-left backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:shadow-xl hover:shadow-purple-500/10 sm:p-5 ${
                     item.isRead
                       ? "border-white/10 bg-white/[0.045]"

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Heart, MessageCircle, Headphones, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-
 type TeaCardProps = {
   id: string | number;
   author: string;
@@ -84,11 +83,13 @@ export default function TeaCard({
 
   const handleLike = async () => {
     if (isUpdatingLike) return;
+
     setIsUpdatingLike(true);
 
-    const currentlyLiked = localStorage.getItem(likeKey) === "true";
-    const nextLiked = !currentlyLiked;
-    const nextLikes = nextLiked ? likesCount + 1 : Math.max(likesCount - 1, 0);
+    const previousLiked = isLiked;
+    const previousLikes = likesCount;
+    const nextLiked = !previousLiked;
+    const nextLikes = nextLiked ? previousLikes + 1 : Math.max(previousLikes - 1, 0);
 
     setLikesCount(nextLikes);
     setIsLiked(nextLiked);
@@ -99,26 +100,26 @@ export default function TeaCard({
       localStorage.removeItem(likeKey);
     }
 
-    const { error } = await supabase
-      .from("posts")
-      .update({ likes_count: nextLikes })
-      .eq("id", String(id));
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .update({ likes_count: nextLikes })
+        .eq("id", String(id));
 
-    if (error) {
+      if (error) throw error;
+    } catch (error) {
       console.error(error);
-      setLikesCount(likesCount);
-      setIsLiked(isLiked);
+      setLikesCount(previousLikes);
+      setIsLiked(previousLiked);
 
-      if (isLiked) {
+      if (previousLiked) {
         localStorage.setItem(likeKey, "true");
       } else {
         localStorage.removeItem(likeKey);
       }
+    } finally {
       setIsUpdatingLike(false);
-      return;
     }
-
-    setIsUpdatingLike(false);
   };
 
   const displayMedia =
@@ -135,34 +136,34 @@ export default function TeaCard({
   const displayEmoji = getAuthorEmoji(displayAuthor, emoji);
 
   return (
-    <article className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl transition hover:border-purple-300/30 hover:bg-white/[0.075] md:p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/15 text-xl ring-1 ring-purple-300/10">
+    <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-3.5 shadow-xl shadow-purple-500/5 backdrop-blur-xl transition hover:border-purple-300/30 hover:bg-white/[0.075] sm:rounded-[2rem] sm:p-4 md:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-2xl bg-purple-500/15 text-lg ring-1 ring-purple-300/10 sm:h-11 sm:w-11 sm:text-xl">
             {displayEmoji}
           </div>
-          <div>
-            <h3 className="text-sm font-semibold md:text-base">{displayAuthor}</h3>
-            <p className="text-xs text-white/40 md:text-sm">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold md:text-base">{displayAuthor}</h3>
+            <p className="truncate text-xs text-white/40 md:text-sm">
               {time} • {type}
             </p>
           </div>
         </div>
 
-        <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/45">
+        <span className="hidden shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/45 min-[380px]:inline-flex">
           Anonymous
         </span>
       </div>
 
       {content && (
-        <p className="mt-4 line-clamp-4 text-base leading-7 text-white/85 md:text-lg md:leading-8">
+        <p className="mt-3 line-clamp-4 whitespace-pre-wrap break-words text-[15px] leading-7 text-white/85 [overflow-wrap:anywhere] sm:mt-4 md:text-lg md:leading-8">
           {content}
         </p>
       )}
 
       {displayMedia.length > 0 && (
         <div
-          className={`mt-4 grid aspect-square overflow-hidden rounded-[1.35rem] border border-white/10 bg-black/20 sm:rounded-[1.6rem] ${
+          className={`mt-3 grid aspect-square overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20 sm:mt-4 sm:rounded-[1.6rem] ${
             visibleMedia.length === 1 ? "grid-cols-1" : "grid-cols-2"
           }`}
         >
@@ -171,7 +172,7 @@ export default function TeaCard({
               key={`${item.url}-${index}`}
               type="button"
               onClick={() => setPreviewMedia(item)}
-              className={`relative overflow-hidden border-white/10 text-left ${
+              className={`relative overflow-hidden border-white/10 text-left active:scale-[0.99] ${
                 visibleMedia.length > 1 ? "border" : ""
               }`}
             >
@@ -218,12 +219,13 @@ export default function TeaCard({
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 sm:flex sm:flex-wrap sm:items-center sm:pt-4">
         <button
+          type="button"
           onClick={handleLike}
           disabled={isUpdatingLike}
           aria-label={isLiked ? "Unlike tea" : "Like tea"}
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm transition active:scale-95 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60 ${
             isLiked
               ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20"
               : "bg-white/5 text-white/70 hover:text-white"
@@ -235,7 +237,7 @@ export default function TeaCard({
 
         <Link
           href={`/tea/${id}`}
-          className="flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+          className="flex items-center justify-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm text-white/70 transition active:scale-95 hover:bg-white/10 hover:text-white"
         >
           <MessageCircle size={17} />
           {comments} comments
@@ -243,7 +245,7 @@ export default function TeaCard({
 
         <Link
           href="/chat"
-          className="ml-auto inline-flex items-center gap-2 rounded-full border border-purple-300/25 px-4 py-2 text-sm text-purple-100 transition hover:bg-purple-500/15"
+          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-purple-300/25 px-4 py-2 text-sm text-purple-100 transition active:scale-95 hover:bg-purple-500/15 sm:ml-auto"
         >
           <Headphones size={16} />
           Talk to TeaTame
@@ -258,7 +260,7 @@ export default function TeaCard({
           <button
             type="button"
             onClick={() => setPreviewMedia(null)}
-            className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
+            className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
             aria-label="Close preview"
           >
             <X size={22} />
@@ -269,7 +271,6 @@ export default function TeaCard({
             onClick={(event) => event.stopPropagation()}
           >
             {previewMedia.type === "image" && (
-               
               <img
                 src={previewMedia.url}
                 alt={previewMedia.name || "Tea media preview"}

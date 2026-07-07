@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FileImage,
   Image,
@@ -106,16 +106,13 @@ export default function CreateTeaForm() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState("");
 
-  const previewUrls = useMemo(
-    () => selectedFiles.map((file) => URL.createObjectURL(file)),
-    [selectedFiles]
-  );
+  const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file));
 
   useEffect(() => {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [previewUrls]);
+  }, [selectedFiles.length]);
 
   useEffect(() => {
     return () => {
@@ -134,6 +131,11 @@ export default function CreateTeaForm() {
       if (activeType === "video") return file.type.startsWith("video/");
       return true;
     });
+
+    if (acceptedFiles.length === 0) {
+      setStatusMessage("Please choose a valid file for the selected tea type.");
+      return;
+    }
 
     setSelectedFiles((prev) => {
       const existingKeys = new Set(prev.map((file) => `${file.name}-${file.size}`));
@@ -155,6 +157,10 @@ export default function CreateTeaForm() {
   };
 
   const startRecording = async () => {
+    if (selectedFiles.length >= 8) {
+      setStatusMessage("You can attach up to 8 media files only.");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = MediaRecorder.isTypeSupported("audio/mp4")
@@ -229,7 +235,7 @@ export default function CreateTeaForm() {
       }
 
       if (typeValue === "audio" && !isRecording) {
-        startRecording();
+        setStatusMessage("Tap Start Recording when you are ready.");
       }
     }, 80);
   };
@@ -245,6 +251,11 @@ export default function CreateTeaForm() {
     });
     setIsRecording(false);
     setStatusMessage("");
+
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
   };
 
   const handleSubmit = async () => {
@@ -431,8 +442,8 @@ export default function CreateTeaForm() {
         placeholder="Spill your tea here... add caption, context, or story."
         className="min-h-32 w-full resize-none rounded-[1.35rem] border border-white/10 bg-black/25 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 sm:rounded-3xl sm:p-5 sm:text-base md:min-h-44"
       />
-      <div className="text-[11px] leading-4 text-white/40 sm:text-xs">
-        Keep it anonymous. Avoid real names or personal details.
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] leading-4 text-white/45 sm:text-xs">
+        Keep it anonymous. Avoid real names, phone numbers, addresses, or personal details.
       </div>
 
       {(activeType === "image" || activeType === "video") && (
@@ -453,8 +464,8 @@ export default function CreateTeaForm() {
             <Image className="mb-3 text-white/70" />
           )}
           <p className="font-medium">Add {activeType === "image" ? "images" : "videos"}</p>
-          <p className="mt-1 text-sm text-white/40">
-            Add up to 8 files. You can also switch tabs and add voice/text.
+          <p className="mt-1 text-xs leading-5 text-white/40 sm:text-sm">
+            Add up to 8 files. On mobile, tapping Images or Videos opens your gallery directly.
           </p>
         </label>
       )}
@@ -571,7 +582,7 @@ export default function CreateTeaForm() {
       )}
 
       {statusMessage && (
-        <div className="rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm leading-5 text-purple-100">
+        <div className="rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm leading-5 text-purple-100 shadow-lg shadow-purple-500/10">
           {statusMessage}
         </div>
       )}

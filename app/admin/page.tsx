@@ -73,7 +73,6 @@ function formatDate(dateString?: string | null) {
   });
 }
 
-// Ensure the admin user exists in anonymous_users before inserting a message
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
@@ -158,7 +157,7 @@ export default function AdminPage() {
 
     setComments((data || []) as unknown as Comment[]);
   };
-const fetchChats = async () => {
+  const fetchChats = async () => {
   const { data, error } = await supabase
     .from("chats")
     .select(`
@@ -213,7 +212,7 @@ const fetchChats = async () => {
   });
 
   setChats(sortedChats);
-};
+  };
 
   const refreshAdmin = useCallback(async () => {
     setLoading(true);
@@ -259,10 +258,22 @@ const fetchChats = async () => {
     const confirmDelete = confirm("Delete this post permanently?");
     if (!confirmDelete) return;
 
-    // Remove related comments for the post
-    await supabase.from("comments").delete().eq("post_id", postId);
+    const { error: commentsError } = await supabase
+      .from("comments")
+      .delete()
+      .eq("post_id", postId);
 
-    const { error } = await supabase.from("posts").delete().eq("id", postId);
+    if (commentsError) {
+      console.error(commentsError);
+      setStatusMessage("Failed to delete post comments.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("id", postId)
+      .select("id");
 
     if (error) {
       console.error(error);
@@ -270,15 +281,26 @@ const fetchChats = async () => {
       return;
     }
 
+    if (!data || data.length === 0) {
+      setStatusMessage("Post delete was blocked by Supabase policy.");
+      return;
+    }
+
     setPosts((prev) => prev.filter((post) => post.id !== postId));
-    setStatusMessage("Post deleted.");
+    setComments((prev) => prev.filter((comment) => comment.posts?.content !== null));
+    setStatusMessage("Post deleted from database.");
+    refreshAdmin();
   };
 
   const deleteComment = async (commentId: string) => {
     const confirmDelete = confirm("Delete this comment permanently?");
     if (!confirmDelete) return;
 
-    const { error } = await supabase.from("comments").delete().eq("id", commentId);
+    const { data, error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId)
+      .select("id");
 
     if (error) {
       console.error(error);
@@ -286,8 +308,14 @@ const fetchChats = async () => {
       return;
     }
 
+    if (!data || data.length === 0) {
+      setStatusMessage("Comment delete was blocked by Supabase policy.");
+      return;
+    }
+
     setComments((prev) => prev.filter((comment) => comment.id !== commentId));
-    setStatusMessage("Comment deleted.");
+    setStatusMessage("Comment deleted from database.");
+    refreshAdmin();
   };
 
   const openChat = async (chat: Chat) => {
@@ -345,11 +373,11 @@ const fetchChats = async () => {
 
     const { data: adminMessage, error } = await supabase
       .from("messages")
-.insert({
-  chat_id: selectedChat.id,
-  sender_id: null,
-  message: `[ADMIN] ${replyText}`,
-})
+      .insert({
+        chat_id: selectedChat.id,
+        sender_id: null,
+        message: `[ADMIN] ${replyText}`,
+      })
       .select("id, sender_id, message, created_at")
       .single();
 
@@ -613,9 +641,9 @@ const fetchChats = async () => {
 
                   <div className="flex-1 space-y-3 overflow-y-auto p-5">
                     {messages.map((msg) => {
-const isAdmin = msg.sender_id === ADMIN_ID || msg.message.startsWith("[ADMIN]");
-const isBot = msg.sender_id === null && !msg.message.startsWith("[ADMIN]");
-const visibleMessage = msg.message.replace(/^\[ADMIN\]\s*/, "");
+                      const isAdmin = msg.sender_id === ADMIN_ID || msg.message.startsWith("[ADMIN]");
+                      const isBot = msg.sender_id === null && !msg.message.startsWith("[ADMIN]");
+                      const visibleMessage = msg.message.replace(/^\[ADMIN\]\s*/, "");
 
                       return (
                         <div

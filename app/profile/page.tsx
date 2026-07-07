@@ -76,7 +76,7 @@ async function createAnonymousUser() {
     .from("anonymous_users")
     .insert({
       anonymous_name: anonymousName,
-      avatar: anonymousName,
+      avatar: getEmojiFromName(anonymousName),
     })
     .select("id, anonymous_name, created_at")
     .single();
@@ -162,6 +162,9 @@ export default function ProfilePage() {
     const newUser = await createAnonymousUser();
 
     localStorage.setItem("TeaTame_user", JSON.stringify(newUser));
+    localStorage.removeItem("TeaTame_read_notifications");
+    localStorage.setItem("TeaTame_notification_count", "0");
+    window.dispatchEvent(new Event("teatame-notifications-updated"));
     setUser(newUser);
     setStats({ posts: 0, comments: 0, likes: 0 });
     setStatusMessage("Anonymous identity reset successfully ☕");
@@ -192,7 +195,7 @@ export default function ProfilePage() {
       </header>
 
       <section className="mx-auto max-w-4xl space-y-5 px-4 py-5 sm:px-5 sm:py-8">
-        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.06] backdrop-blur-xl">
+        <div className="overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.06] shadow-xl shadow-purple-500/5 backdrop-blur-xl sm:rounded-[2rem]">
           <div className="border-b border-white/10 bg-purple-500/10 px-5 py-4">
             <p className="inline-flex items-center gap-2 rounded-full border border-purple-300/20 bg-purple-400/10 px-3 py-1.5 text-xs text-purple-100">
               <Sparkles size={14} />
@@ -202,7 +205,7 @@ export default function ProfilePage() {
 
           <div className="p-5 sm:p-6">
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-[2rem] border border-purple-300/30 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 text-5xl shadow-2xl shadow-purple-500/20">
+              <div className="flex h-24 w-24 select-none items-center justify-center rounded-[2rem] border border-purple-300/30 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 text-5xl shadow-2xl shadow-purple-500/20">
                 {emoji}
               </div>
 
@@ -220,17 +223,17 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
-            <p className="text-2xl font-bold">{stats.posts}</p>
+            <p className="text-2xl font-bold tabular-nums">{stats.posts}</p>
             <p className="mt-1 text-xs text-white/45">Teas</p>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
-            <p className="text-2xl font-bold">{stats.comments}</p>
+            <p className="text-2xl font-bold tabular-nums">{stats.comments}</p>
             <p className="mt-1 text-xs text-white/45">Comments</p>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
-            <p className="text-2xl font-bold">{stats.likes}</p>
+            <p className="text-2xl font-bold tabular-nums">{stats.likes}</p>
             <p className="mt-1 text-xs text-white/45">Likes</p>
           </div>
         </div>

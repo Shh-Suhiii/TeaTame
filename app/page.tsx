@@ -71,36 +71,58 @@ export default function Home() {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const { data, error } = await supabase
-        .from("posts")
-        .select(`
-          id,
-          content,
-          likes_count,
-          comments_count,
-          created_at,
-          media_url,
-          media_type,
-          category,
-          media_items,
-          anonymous_users (
-            anonymous_name,
-            avatar
-          )
-        `)
-        .order("created_at", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("posts")
+          .select(`
+            id,
+            content,
+            likes_count,
+            comments_count,
+            created_at,
+            media_url,
+            media_type,
+            category,
+            media_items,
+            anonymous_users (
+              anonymous_name,
+              avatar
+            )
+          `)
+          .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Failed to fetch posts:", error.message);
+        if (error) {
+          console.error("Failed to fetch posts:", error.message);
+          setLoadingPosts(false);
+          return;
+        }
+
+        setTeaPosts((data || []) as unknown as TeaPost[]);
         setLoadingPosts(false);
-        return;
+      } catch (err) {
+        console.error("Exception while fetching posts:", err);
+        setTeaPosts([]);
+        setLoadingPosts(false);
       }
-
-      setTeaPosts((data || []) as unknown as TeaPost[]);
-      setLoadingPosts(false);
     };
 
     fetchPosts();
+
+    // Subscribe to realtime changes on posts table
+    const channel = supabase
+      .channel("realtime-posts")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "posts" },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filteredPosts = teaPosts.filter((post) => {
@@ -194,8 +216,11 @@ export default function Home() {
 
           <div className="space-y-4 sm:space-y-5">
             {loadingPosts && (
-              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 text-white/60 backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
-                Loading fresh tea...
+              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl sm:rounded-[2rem] sm:p-6 flex flex-col items-center justify-center">
+                <span className="mb-3 flex items-center justify-center">
+                  <span className="h-4 w-4 rounded-full bg-purple-500 animate-pulse" />
+                </span>
+                <span className="text-white/60">Loading fresh tea...</span>
               </div>
             )}
 
@@ -203,12 +228,17 @@ export default function Home() {
               <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 text-center backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
                 <h3 className="text-xl font-bold">☕ No tea found</h3>
                 <p className="mt-2 text-white/55">Try another search or category.</p>
+                <p className="mt-1 text-xs text-white/35">Be the first to spill the tea ☕</p>
               </div>
             )}
 
             {!loadingPosts &&
               filteredPosts.map((post) => {
-                const author = post.anonymous_users?.anonymous_name || "Anonymous User";
+                const author =
+                  post.anonymous_users?.anonymous_name &&
+                  post.anonymous_users.anonymous_name !== "Anonymous User"
+                    ? post.anonymous_users.anonymous_name
+                    : "Anonymous Bear 🐻";
 
                 return (
                   <TeaCard
