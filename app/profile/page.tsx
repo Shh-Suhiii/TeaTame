@@ -69,6 +69,28 @@ function formatJoinedDate(dateString?: string) {
   });
 }
 
+async function createAnonymousUser() {
+  const anonymousName = generateAnonymousName();
+
+  const { data, error } = await supabase
+    .from("anonymous_users")
+    .insert({
+      anonymous_name: anonymousName,
+      avatar: anonymousName,
+    })
+    .select("id, anonymous_name, created_at")
+    .single();
+
+  if (error || !data) {
+    return {
+      anonymous_name: anonymousName,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  return data as TeaTimeUser;
+}
+
 export default function ProfilePage() {
   const [user, setUser] = useState<TeaTimeUser | null>(null);
   const [stats, setStats] = useState<ProfileStats>({
@@ -79,27 +101,26 @@ export default function ProfilePage() {
   const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
-    const savedUser = getSavedUser();
+    const prepareUser = async () => {
+      const savedUser = getSavedUser();
 
-    if (
-      savedUser?.anonymous_name &&
-      savedUser.anonymous_name.trim() !== "" &&
-      savedUser.anonymous_name !== "Anonymous User"
-    ) {
-      setUser(savedUser);
-      return;
-    }
+      if (
+        savedUser?.anonymous_name &&
+        savedUser.anonymous_name.trim() !== "" &&
+        savedUser.anonymous_name !== "Anonymous User"
+      ) {
+        setUser(savedUser);
+        return;
+      }
 
-    localStorage.removeItem("TeaTame_user");
+      localStorage.removeItem("TeaTame_user");
 
-    const anonymousName = generateAnonymousName();
-    const newUser = {
-      anonymous_name: anonymousName,
-      created_at: new Date().toISOString(),
+      const newUser = await createAnonymousUser();
+      localStorage.setItem("TeaTame_user", JSON.stringify(newUser));
+      setUser(newUser);
     };
 
-    localStorage.setItem("TeaTame_user", JSON.stringify(newUser));
-    setUser(newUser);
+    prepareUser();
   }, []);
 
   useEffect(() => {
@@ -131,21 +152,18 @@ export default function ProfilePage() {
     fetchStats();
   }, [user?.id]);
 
-  const resetIdentity = () => {
+  const resetIdentity = async () => {
     const confirmReset = confirm(
       "Reset your anonymous identity? Your old posts will stay as they are, but your future activity will use a new identity."
     );
 
     if (!confirmReset) return;
 
-    const anonymousName = generateAnonymousName();
-    const newUser = {
-      anonymous_name: anonymousName,
-      created_at: new Date().toISOString(),
-    };
+    const newUser = await createAnonymousUser();
 
     localStorage.setItem("TeaTame_user", JSON.stringify(newUser));
     setUser(newUser);
+    setStats({ posts: 0, comments: 0, likes: 0 });
     setStatusMessage("Anonymous identity reset successfully ☕");
   };
 
@@ -178,7 +196,7 @@ export default function ProfilePage() {
           <div className="border-b border-white/10 bg-purple-500/10 px-5 py-4">
             <p className="inline-flex items-center gap-2 rounded-full border border-purple-300/20 bg-purple-400/10 px-3 py-1.5 text-xs text-purple-100">
               <Sparkles size={14} />
-              Your private TeaTime identity
+              Your private TeaTame identity
             </p>
           </div>
 
@@ -190,28 +208,28 @@ export default function ProfilePage() {
 
               <h2 className="mt-4 text-2xl font-bold">{displayName}</h2>
               <p className="mt-2 max-w-md text-sm leading-6 text-white/55 sm:text-base">
-                This is your anonymous identity on TeaTime. Other users cannot see your real name.
+                This identity stays on your device and is used for your future posts, comments, and support chats on TeaTame.
               </p>
 
               <div className="mt-4 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/45">
-                Joined {formatJoinedDate(user?.created_at)}
+                Joined {formatJoinedDate(user?.created_at)} • Private by default
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-center backdrop-blur-xl">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
             <p className="text-2xl font-bold">{stats.posts}</p>
             <p className="mt-1 text-xs text-white/45">Teas</p>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-center backdrop-blur-xl">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
             <p className="text-2xl font-bold">{stats.comments}</p>
             <p className="mt-1 text-xs text-white/45">Comments</p>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-center backdrop-blur-xl">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
             <p className="text-2xl font-bold">{stats.likes}</p>
             <p className="mt-1 text-xs text-white/45">Likes</p>
           </div>
@@ -232,7 +250,7 @@ export default function ProfilePage() {
               <Bell className="text-purple-200" />
               <div>
                 <span className="font-medium">Notifications</span>
-                <p className="text-xs text-white/40">Likes, comments, and TeaTime updates</p>
+                <p className="text-xs text-white/40">Likes, comments, and TeaTame updates</p>
               </div>
             </div>
             <ChevronRight size={18} className="text-white/40" />
@@ -258,7 +276,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <MessageCircle className="text-purple-200" />
               <div>
-                <span className="font-medium">TeaTime Support</span>
+                <span className="font-medium">TeaTame Support</span>
                 <p className="text-xs text-white/40">Ask AI support or request admin review</p>
               </div>
             </div>
@@ -284,10 +302,13 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <Coffee className="text-purple-200" />
               <div>
-                <span className="font-medium">TeaTime Guidelines</span>
-                <p className="mt-1 text-xs leading-5 text-white/40">
-                  Keep posts anonymous, avoid real names, and report harmful content when needed.
-                </p>
+                <span className="font-medium">TeaTame Guidelines</span>
+                <ul className="mt-2 space-y-1 text-xs leading-5 text-white/40">
+                  <li>• Keep posts anonymous and avoid sharing real names, phone numbers, addresses, or private details.</li>
+                  <li>• Be respectful while commenting, even when sharing strong opinions or confessions.</li>
+                  <li>• Do not post bullying, threats, hate, harassment, or harmful content.</li>
+                  <li>• Report posts or comments that feel unsafe, abusive, or privacy-breaking.</li>
+                </ul>
               </div>
             </div>
           </div>
