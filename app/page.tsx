@@ -121,19 +121,19 @@ export default function Home() {
 
       <Navbar />
 
-      <section className="mx-auto grid w-full max-w-full gap-4 px-3 pb-32 pt-3 sm:max-w-6xl sm:px-5 sm:py-6 lg:grid-cols-[1fr_320px]">
+      <section className="mx-auto grid w-full max-w-full gap-3 px-3 pb-32 pt-3 sm:max-w-6xl sm:gap-4 sm:px-5 sm:py-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-3 sm:space-y-5">
-          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur-xl sm:rounded-[2rem] sm:p-5">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.055] p-3 backdrop-blur-xl sm:rounded-[2rem] sm:p-5">
             <div className="flex items-start justify-between gap-2.5 sm:gap-3">
               <div className="min-w-0 flex-1">
-                <p className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-purple-300/20 bg-purple-400/10 px-2.5 py-1.5 text-[10px] text-purple-100 sm:mb-3 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
+                <p className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-purple-300/20 bg-purple-400/10 px-2.5 py-1.5 text-[10px] text-purple-100 sm:mb-3 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
                   <Sparkles size={16} />
                   Anonymous social feed
                 </p>
-                <h2 className="max-w-2xl text-[1.72rem] font-bold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl">
+                <h2 className="max-w-2xl text-[1.55rem] font-bold leading-[1.08] tracking-tight min-[390px]:text-[1.72rem] sm:text-4xl md:text-5xl">
                   What&apos;s the tea today?
                 </h2>
-                <p className="mt-2 max-w-2xl text-[11px] leading-5 text-white/55 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
+                <p className="mt-1.5 max-w-2xl text-[11px] leading-5 text-white/55 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
                   Spill your thoughts anonymously. No names. No judgments.
                 </p>
               </div>
@@ -147,7 +147,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-3.5 flex flex-col gap-2 rounded-[1.15rem] border border-white/10 bg-black/20 p-2 sm:mt-5 sm:flex-row sm:rounded-3xl sm:p-3">
+            <div className="mt-3 flex flex-col gap-2 rounded-[1.15rem] border border-white/10 bg-black/20 p-2 sm:mt-5 sm:flex-row sm:rounded-3xl sm:p-3">
               <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/5 px-3 py-2.5 text-white/40 sm:gap-3 sm:px-4 sm:py-3">
                 <Search size={18} />
                 <input
@@ -166,12 +166,12 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="-mx-3 flex snap-x gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:gap-3 sm:px-0 [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-3 flex snap-x gap-2 overflow-x-auto px-3 pb-1 pt-0.5 [scrollbar-width:none] sm:mx-0 sm:gap-3 sm:px-0 [&::-webkit-scrollbar]:hidden">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`shrink-0 snap-start rounded-full border px-4 py-2 text-xs transition sm:px-5 sm:text-sm ${
+                className={`shrink-0 snap-start rounded-full border px-4 py-2 text-xs font-medium transition active:scale-95 sm:px-5 sm:text-sm ${
                   selectedCategory === category
                     ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
                     : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
@@ -182,15 +182,22 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="space-y-3.5 sm:space-y-5">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-semibold text-white/80">Latest Teas</h3>
+            <span className="text-xs text-white/35">
+              {filteredPosts.length} {filteredPosts.length === 1 ? "post" : "posts"}
+            </span>
+          </div>
+
+          <div className="space-y-3 sm:space-y-5">
             {loadingPosts && (
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 text-white/60 backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
+              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 text-white/60 backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
                 Loading fresh tea...
               </div>
             )}
 
             {!loadingPosts && filteredPosts.length === 0 && (
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 text-center backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
+              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 text-center backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
                 <h3 className="text-xl font-bold">☕ No tea found</h3>
                 <p className="mt-2 text-white/55">Try another search or category.</p>
               </div>
