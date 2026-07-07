@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import NextImage from "next/image";
+import { generateAnonymousName } from "@/lib/anonymous-user";
 
 const teaTypes = [
   { title: "Text", value: "text", icon: Type, hint: "Write a confession" },
@@ -42,7 +43,10 @@ async function getOrCreateAnonymousUser() {
       return parsedUser;
     }
 
-    const anonymousName = parsedUser?.anonymous_name || "Anonymous User";
+    const anonymousName =
+      parsedUser?.anonymous_name && parsedUser.anonymous_name !== "Anonymous User"
+        ? parsedUser.anonymous_name
+        : generateAnonymousName();
 
     const { data, error } = await supabase
       .from("anonymous_users")
@@ -59,7 +63,7 @@ async function getOrCreateAnonymousUser() {
     return data;
   }
 
-  const anonymousName = "Anonymous User";
+  const anonymousName = generateAnonymousName();
 
   const { data, error } = await supabase
     .from("anonymous_users")
@@ -247,26 +251,26 @@ export default function CreateTeaForm() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-black/20 p-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex items-center gap-3 rounded-[1.4rem] border border-white/10 bg-black/20 p-3.5 sm:rounded-3xl sm:p-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10 sm:h-12 sm:w-12">
           <NextImage
             src="/logo3.png"
             alt="TeaTame Logo"
             width={56}
             height={56}
-            className="h-9 w-9 object-contain"
+            className="h-8 w-8 object-contain sm:h-9 sm:w-9"
           />
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-white">Create Your Tea</h2>
-          <p className="text-sm text-zinc-400">
+          <h2 className="text-lg font-bold text-white sm:text-xl">Create Your Tea</h2>
+          <p className="text-xs text-zinc-400 sm:text-sm">
             Spill safely. Stay anonymous.
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
         {teaTypes.map((type) => {
           const Icon = type.icon;
 
@@ -275,15 +279,15 @@ export default function CreateTeaForm() {
               key={type.title}
               type="button"
               onClick={() => setActiveType(type.value)}
-              className={`rounded-3xl border p-4 text-left transition md:p-5 ${
+              className={`rounded-[1.25rem] border p-3 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${
                 activeType === type.value
                   ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
                   : "border-white/10 bg-black/20 hover:border-purple-300/40 hover:bg-purple-500/10"
               }`}
             >
-              <Icon className="mb-3 text-purple-200" />
-              <h3 className="font-semibold">{type.title}</h3>
-              <p className="mt-1 text-xs text-white/40">{type.hint}</p>
+              <Icon size={20} className="mb-2 text-purple-200 sm:mb-3" />
+              <h3 className="text-sm font-semibold sm:text-base">{type.title}</h3>
+              <p className="mt-1 text-[11px] text-white/40 sm:text-xs">{type.hint}</p>
               {activeType === type.value && (
                 <p className="mt-2 text-xs text-purple-200">Selected</p>
               )}
@@ -296,13 +300,13 @@ export default function CreateTeaForm() {
         <label className="block text-sm font-medium text-white/70">
           Category
         </label>
-        <div className="flex flex-wrap gap-3">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:gap-3 sm:px-0 [&::-webkit-scrollbar]:hidden">
           {categories.map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => setCategory(item)}
-              className={`rounded-full border px-4 py-2 text-xs transition md:text-sm ${
+              className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition active:scale-95 md:text-sm ${
                 category === item
                   ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
                   : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
@@ -319,15 +323,15 @@ export default function CreateTeaForm() {
         onChange={(e) => setContent(e.target.value)}
         maxLength={1000}
         placeholder="Spill your tea here... add caption, context, or story."
-        className="min-h-36 w-full resize-none rounded-3xl border border-white/10 bg-black/25 p-5 text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 md:min-h-44"
+        className="min-h-32 w-full resize-none rounded-[1.35rem] border border-white/10 bg-black/25 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 sm:rounded-3xl sm:p-5 sm:text-base md:min-h-44"
       />
-      <div className="flex justify-between text-xs text-white/40">
+      <div className="flex items-start justify-between gap-3 text-[11px] leading-4 text-white/40 sm:text-xs">
         <span>Keep it anonymous. Avoid real names or personal details.</span>
         <span>{content.length}/1000</span>
       </div>
 
       {(activeType === "image" || activeType === "video") && (
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-black/20 p-6 text-center transition hover:border-purple-300/40 hover:bg-purple-500/10 md:p-8">
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/15 bg-black/20 p-5 text-center transition hover:border-purple-300/40 hover:bg-purple-500/10 sm:rounded-3xl md:p-8">
           <input
             type="file"
             multiple
@@ -348,7 +352,7 @@ export default function CreateTeaForm() {
       )}
 
       {activeType === "audio" && (
-        <div className="rounded-3xl border border-dashed border-white/15 bg-black/20 p-5 text-center md:p-6">
+        <div className="rounded-[1.35rem] border border-dashed border-white/15 bg-black/20 p-5 text-center sm:rounded-3xl md:p-6">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-500/20">
             {isRecording ? (
               <Pause className="text-purple-100" />
@@ -394,7 +398,7 @@ export default function CreateTeaForm() {
       )}
 
       {selectedFiles.length > 0 && (
-        <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
+        <div className="rounded-[1.35rem] border border-white/10 bg-black/20 p-3.5 sm:rounded-3xl sm:p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-white/70">
               <FileImage size={16} />
@@ -412,11 +416,11 @@ export default function CreateTeaForm() {
             </button>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 px-4 py-3 text-sm text-white/70"
+                className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 px-3 py-3 text-sm text-white/70 sm:px-4"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {getFileType(file) === "image" ? (
@@ -456,14 +460,14 @@ export default function CreateTeaForm() {
       )}
 
       {statusMessage && (
-        <div className="rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm text-purple-100">
+        <div className="rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm leading-5 text-purple-100">
           {statusMessage}
         </div>
       )}
       <button
         onClick={handleSubmit}
         disabled={loading || (!content.trim() && selectedFiles.length === 0)}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/20 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Send size={18} />
         {loading ? "Posting..." : "Post Tea"}
