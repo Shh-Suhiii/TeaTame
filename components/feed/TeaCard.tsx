@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, MessageCircle, Headphones, X, Flag } from "lucide-react";
+import { Heart, MessageCircle, Headphones, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 
@@ -119,13 +119,6 @@ export default function TeaCard({
     }
 
     setIsUpdatingLike(false);
-  };
-
-  const handleReport = () => {
-    const reportMessage = `Report post request\nPost ID: ${id}\nReason: `;
-
-    localStorage.setItem("TeaTame_support_prefill", reportMessage);
-    window.location.href = "/chat";
   };
 
   const displayMedia =
@@ -247,15 +240,6 @@ export default function TeaCard({
           <MessageCircle size={17} />
           {comments} comments
         </Link>
-
-        <button
-          type="button"
-          onClick={handleReport}
-          className="inline-flex items-center gap-2 rounded-full border border-red-300/20 px-4 py-2 text-sm text-red-100 transition hover:bg-red-500/10"
-        >
-          <Flag size={16} />
-          Report
-        </button>
 
         <Link
           href="/chat"
