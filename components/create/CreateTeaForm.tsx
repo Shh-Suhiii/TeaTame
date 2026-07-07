@@ -100,6 +100,8 @@ export default function CreateTeaForm() {
   const [statusMessage, setStatusMessage] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState("");
@@ -209,6 +211,27 @@ export default function CreateTeaForm() {
     mediaRecorderRef.current.stop();
     mediaRecorderRef.current = null;
     setIsRecording(false);
+  };
+
+  const handleTypeSelect = (typeValue: string) => {
+    setActiveType(typeValue);
+
+    const isMobile = window.matchMedia("(max-width: 639px)").matches;
+    if (!isMobile) return;
+
+    window.setTimeout(() => {
+      if (typeValue === "image") {
+        imageInputRef.current?.click();
+      }
+
+      if (typeValue === "video") {
+        videoInputRef.current?.click();
+      }
+
+      if (typeValue === "audio" && !isRecording) {
+        startRecording();
+      }
+    }, 80);
   };
 
   const clearForm = () => {
@@ -338,7 +361,7 @@ export default function CreateTeaForm() {
             <button
               key={type.title}
               type="button"
-              onClick={() => setActiveType(type.value)}
+              onClick={() => handleTypeSelect(type.value)}
               className={`rounded-[1.25rem] border p-3 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${
                 activeType === type.value
                   ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
@@ -355,6 +378,30 @@ export default function CreateTeaForm() {
           );
         })}
       </div>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={(event) => {
+          addFiles(event.target.files);
+          event.target.value = "";
+        }}
+        className="hidden"
+      />
+
+      <input
+        ref={videoInputRef}
+        type="file"
+        multiple
+        accept="video/*"
+        onChange={(event) => {
+          addFiles(event.target.files);
+          event.target.value = "";
+        }}
+        className="hidden"
+      />
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-white/70">
@@ -381,13 +428,11 @@ export default function CreateTeaForm() {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        maxLength={1000}
         placeholder="Spill your tea here... add caption, context, or story."
         className="min-h-32 w-full resize-none rounded-[1.35rem] border border-white/10 bg-black/25 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 sm:rounded-3xl sm:p-5 sm:text-base md:min-h-44"
       />
-      <div className="flex items-start justify-between gap-3 text-[11px] leading-4 text-white/40 sm:text-xs">
-        <span>Keep it anonymous. Avoid real names or personal details.</span>
-        <span>{content.length}/1000</span>
+      <div className="text-[11px] leading-4 text-white/40 sm:text-xs">
+        Keep it anonymous. Avoid real names or personal details.
       </div>
 
       {(activeType === "image" || activeType === "video") && (
