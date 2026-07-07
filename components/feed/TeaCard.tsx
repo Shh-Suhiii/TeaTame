@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Heart, MessageCircle, Headphones, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
+
 type TeaCardProps = {
   id: string | number;
   author: string;
@@ -23,6 +24,36 @@ type TeaCardProps = {
     name?: string;
   }[];
 };
+
+const anonymousAnimals = [
+  "Bear 🐻",
+  "Panda 🐼",
+  "Fox 🦊",
+  "Tiger 🐯",
+  "Wolf 🐺",
+  "Koala 🐨",
+  "Cat 🐱",
+  "Rabbit 🐰",
+  "Penguin 🐧",
+  "Owl 🦉",
+];
+
+function getStableAnonymousName(id: string | number, author: string) {
+  if (author && author.trim() !== "" && author !== "Anonymous User") {
+    return author;
+  }
+
+  const idString = String(id);
+  const charTotal = idString.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
+  const animal = anonymousAnimals[charTotal % anonymousAnimals.length];
+
+  return `Anonymous ${animal}`;
+}
+
+function getAuthorEmoji(displayAuthor: string, fallbackEmoji: string) {
+  const emojiMatch = displayAuthor.match(/[\u{1F300}-\u{1FAFF}]/u);
+  return emojiMatch?.[0] || fallbackEmoji || "🐻";
+}
 
 export default function TeaCard({
   id,
@@ -100,15 +131,18 @@ export default function TeaCard({
   const visibleMedia = displayMedia.slice(0, 4);
   const extraMediaCount = Math.max(displayMedia.length - visibleMedia.length, 0);
 
+  const displayAuthor = getStableAnonymousName(id, author);
+  const displayEmoji = getAuthorEmoji(displayAuthor, emoji);
+
   return (
     <article className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl transition hover:border-purple-300/30 hover:bg-white/[0.075] md:p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/15 text-xl ring-1 ring-purple-300/10">
-            {emoji}
+            {displayEmoji}
           </div>
           <div>
-            <h3 className="text-sm font-semibold md:text-base">{author}</h3>
+            <h3 className="text-sm font-semibold md:text-base">{displayAuthor}</h3>
             <p className="text-xs text-white/40 md:text-sm">
               {time} • {type}
             </p>
