@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,7 +11,6 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
-  UserCircle,
 } from "lucide-react";
 import BottomNav from "@/components/common/BottomNav";
 import { generateAnonymousName } from "@/lib/anonymous-user";
@@ -37,7 +35,18 @@ function getSavedUser() {
   if (!saved) return null;
 
   try {
-    return JSON.parse(saved) as TeaTimeUser;
+    const parsedUser = JSON.parse(saved) as TeaTimeUser;
+
+    if (
+      !parsedUser?.anonymous_name ||
+      parsedUser.anonymous_name.trim() === "" ||
+      parsedUser.anonymous_name === "Anonymous User"
+    ) {
+      localStorage.removeItem("TeaTame_user");
+      return null;
+    }
+
+    return parsedUser;
   } catch {
     localStorage.removeItem("TeaTame_user");
     return null;
