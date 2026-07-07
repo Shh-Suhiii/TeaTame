@@ -72,10 +72,16 @@ export default function ProfilePage() {
   useEffect(() => {
     const savedUser = getSavedUser();
 
-    if (savedUser?.anonymous_name) {
+    if (
+      savedUser?.anonymous_name &&
+      savedUser.anonymous_name.trim() !== "" &&
+      savedUser.anonymous_name !== "Anonymous User"
+    ) {
       setUser(savedUser);
       return;
     }
+
+    localStorage.removeItem("TeaTame_user");
 
     const anonymousName = generateAnonymousName();
     const newUser = {
@@ -134,7 +140,10 @@ export default function ProfilePage() {
     setStatusMessage("Anonymous identity reset successfully ☕");
   };
 
-  const displayName = user?.anonymous_name || "Anonymous User";
+  const displayName =
+    user?.anonymous_name && user.anonymous_name !== "Anonymous User"
+      ? user.anonymous_name
+      : "Anonymous Bear 🐻";
   const emoji = getEmojiFromName(displayName);
 
   return (
