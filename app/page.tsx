@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, User } from "lucide-react";
 import Navbar from "@/components/common/Navbar";
 import BottomNav from "@/components/common/BottomNav";
 import TeaCard from "@/components/feed/TeaCard";
@@ -124,17 +124,27 @@ export default function Home() {
       <section className="mx-auto grid w-full max-w-full gap-4 px-3 pb-32 pt-3 sm:max-w-6xl sm:px-5 sm:py-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-3 sm:space-y-5">
           <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl sm:rounded-[2rem] sm:p-5">
-            <div>
-              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-purple-300/20 bg-purple-400/10 px-3 py-1.5 text-[11px] text-purple-100 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
-                <Sparkles size={16} />
-                Anonymous social feed
-              </p>
-              <h2 className="max-w-2xl text-[2rem] font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
-                What&apos;s the tea today?
-              </h2>
-              <p className="mt-2 max-w-2xl text-xs leading-5 text-white/55 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
-                Spill your thoughts anonymously. No names. No judgments.
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-purple-300/20 bg-purple-400/10 px-3 py-1.5 text-[11px] text-purple-100 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
+                  <Sparkles size={16} />
+                  Anonymous social feed
+                </p>
+                <h2 className="max-w-2xl text-[2rem] font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+                  What&apos;s the tea today?
+                </h2>
+                <p className="mt-2 max-w-2xl text-xs leading-5 text-white/55 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
+                  Spill your thoughts anonymously. No names. No judgments.
+                </p>
+              </div>
+
+              <Link
+                href="/profile"
+                aria-label="Open profile"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-purple-300/20 bg-purple-500/10 text-purple-100 transition hover:scale-105 hover:bg-purple-500/20"
+              >
+                <User size={22} />
+              </Link>
             </div>
 
             <div className="mt-4 flex flex-col gap-2 rounded-[1.2rem] border border-white/10 bg-black/20 p-2 sm:mt-5 sm:flex-row sm:rounded-3xl sm:p-3">
