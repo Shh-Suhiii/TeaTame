@@ -108,6 +108,12 @@ function safetyNotification(): NotificationItem {
   };
 }
 
+function syncNotificationBadge(items: NotificationItem[]) {
+  const unreadItems = items.filter((item) => !item.isRead);
+  localStorage.setItem("TeaTame_notification_count", String(unreadItems.length));
+  window.dispatchEvent(new Event("teatame-notifications-updated"));
+}
+
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [readIds, setReadIds] = useState<string[]>([]);
@@ -118,7 +124,9 @@ export default function NotificationsPage() {
 
   const buildNotifications = async (user: TeaTameUser | null, savedReadIds: string[]) => {
     if (!user?.id) {
-      setNotifications([safetyNotification()]);
+      const fallbackNotifications = [safetyNotification()];
+      setNotifications(fallbackNotifications);
+      syncNotificationBadge(fallbackNotifications);
       setLoading(false);
       return;
     }
@@ -215,6 +223,7 @@ export default function NotificationsPage() {
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     setNotifications(nextNotifications);
+    syncNotificationBadge(nextNotifications);
     setLoading(false);
   };
 
@@ -289,17 +298,20 @@ export default function NotificationsPage() {
   const markAllRead = () => {
     const allIds = notifications.map((item) => item.id);
     saveReadIds(allIds);
-    setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+    const nextNotifications = notifications.map((item) => ({ ...item, isRead: true }));
+    setNotifications(nextNotifications);
+    syncNotificationBadge(nextNotifications);
   };
 
   const markOneRead = (id: string) => {
     const nextReadIds = Array.from(new Set([...readIds, id]));
     saveReadIds(nextReadIds);
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, isRead: true } : notification
-      )
+    const nextNotifications = notifications.map((notification) =>
+      notification.id === id ? { ...notification, isRead: true } : notification
     );
+
+    setNotifications(nextNotifications);
+    syncNotificationBadge(nextNotifications);
   };
 
   return (
