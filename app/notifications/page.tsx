@@ -68,6 +68,19 @@ function getSavedUser() {
   }
 }
 
+function getSavedReadIds() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    return JSON.parse(
+      localStorage.getItem("TeaTame_read_notifications") || "[]"
+    ) as string[];
+  } catch {
+    localStorage.removeItem("TeaTame_read_notifications");
+    return [];
+  }
+}
+
 function formatRelativeTime(dateString?: string | null) {
   if (!dateString) return "Just now";
 
@@ -116,9 +129,9 @@ function syncNotificationBadge(items: NotificationItem[]) {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [readIds, setReadIds] = useState<string[]>([]);
+  const [readIds, setReadIds] = useState<string[]>(getSavedReadIds);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<TeaTameUser | null>(null);
+  const [currentUser] = useState<TeaTameUser | null>(getSavedUser);
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
 
@@ -228,15 +241,12 @@ export default function NotificationsPage() {
   };
 
   useEffect(() => {
-    const savedReadIds = JSON.parse(
-      localStorage.getItem("TeaTame_read_notifications") || "[]"
-    ) as string[];
-    const savedUser = getSavedUser();
+    const timer = window.setTimeout(() => {
+      buildNotifications(currentUser, readIds);
+    }, 0);
 
-    setReadIds(savedReadIds);
-    setCurrentUser(savedUser);
-    buildNotifications(savedUser, savedReadIds);
-  }, []);
+    return () => window.clearTimeout(timer);
+  }, [currentUser, readIds]);
 
   useEffect(() => {
     if (!currentUser?.id) return;

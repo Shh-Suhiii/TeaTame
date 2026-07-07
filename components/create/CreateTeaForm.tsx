@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FileImage,
   Image,
@@ -33,43 +33,47 @@ type MediaItem = {
   name: string;
 };
 
-async function getOrCreateAnonymousUser() {
-  const savedUser = localStorage.getItem("TeaTame_user");
+function getEmojiFromName(name: string) {
+  const emojiMatch = name.match(/[\u{1F300}-\u{1FAFF}]/u);
+  return emojiMatch?.[0] || "☕";
+}
 
-  if (savedUser) {
+function readSavedUser() {
+  const savedUser = localStorage.getItem("TeaTame_user");
+  if (!savedUser) return null;
+
+  try {
     const parsedUser = JSON.parse(savedUser);
 
-    if (parsedUser?.id) {
-      return parsedUser;
+    if (parsedUser?.anonymous_name === "Anonymous User") {
+      localStorage.removeItem("TeaTame_user");
+      return null;
     }
 
-    const anonymousName =
-      parsedUser?.anonymous_name && parsedUser.anonymous_name !== "Anonymous User"
-        ? parsedUser.anonymous_name
-        : generateAnonymousName();
+    return parsedUser;
+  } catch {
+    localStorage.removeItem("TeaTame_user");
+    return null;
+  }
+}
 
-    const { data, error } = await supabase
-      .from("anonymous_users")
-      .insert({
-        anonymous_name: anonymousName,
-        avatar: anonymousName,
-      })
-      .select()
-      .single();
+async function getOrCreateAnonymousUser() {
+  const parsedUser = readSavedUser();
 
-    if (error) throw error;
-
-    localStorage.setItem("TeaTame_user", JSON.stringify(data));
-    return data;
+  if (parsedUser?.id && parsedUser?.anonymous_name) {
+    return parsedUser;
   }
 
-  const anonymousName = generateAnonymousName();
+  const anonymousName =
+    parsedUser?.anonymous_name && parsedUser.anonymous_name !== "Anonymous User"
+      ? parsedUser.anonymous_name
+      : generateAnonymousName();
 
   const { data, error } = await supabase
     .from("anonymous_users")
     .insert({
       anonymous_name: anonymousName,
-      avatar: anonymousName,
+      avatar: getEmojiFromName(anonymousName),
     })
     .select()
     .single();
@@ -100,6 +104,25 @@ export default function CreateTeaForm() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState("");
 
+  const previewUrls = useMemo(
+    () => selectedFiles.map((file) => URL.createObjectURL(file)),
+    [selectedFiles]
+  );
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  useEffect(() => {
+    return () => {
+      if (recordedAudioUrl) {
+        URL.revokeObjectURL(recordedAudioUrl);
+      }
+    };
+  }, [recordedAudioUrl]);
+
   const addFiles = (files: FileList | null) => {
     if (!files) return;
 
@@ -110,7 +133,19 @@ export default function CreateTeaForm() {
       return true;
     });
 
-    setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
+    setSelectedFiles((prev) => {
+      const existingKeys = new Set(prev.map((file) => `${file.name}-${file.size}`));
+      const uniqueFiles = acceptedFiles.filter(
+        (file) => !existingKeys.has(`${file.name}-${file.size}`)
+      );
+      const nextFiles = [...prev, ...uniqueFiles];
+
+      if (nextFiles.length > 8) {
+        setStatusMessage("You can attach up to 8 media files only.");
+      }
+
+      return nextFiles.slice(0, 8);
+    });
   };
 
   const removeFile = (index: number) => {
@@ -142,8 +177,19 @@ export default function CreateTeaForm() {
           type: mimeType,
         });
 
-        setSelectedFiles((prev) => [...prev, audioFile]);
-        setRecordedAudioUrl(URL.createObjectURL(audioBlob));
+        setSelectedFiles((prev) => {
+          if (prev.length >= 8) {
+            setStatusMessage("You can attach up to 8 media files only.");
+            return prev;
+          }
+
+          return [...prev, audioFile];
+        });
+
+        setRecordedAudioUrl((prevUrl) => {
+          if (prevUrl) URL.revokeObjectURL(prevUrl);
+          return URL.createObjectURL(audioBlob);
+        });
 
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -170,7 +216,10 @@ export default function CreateTeaForm() {
     setCategory("Random");
     setActiveType("text");
     setSelectedFiles([]);
-    setRecordedAudioUrl("");
+    setRecordedAudioUrl((prevUrl) => {
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      return "";
+    });
     setIsRecording(false);
     setStatusMessage("");
   };
@@ -183,6 +232,12 @@ export default function CreateTeaForm() {
     }
 
     setLoading(true);
+
+    if (selectedFiles.length > 8) {
+      setStatusMessage("You can attach up to 8 media files only.");
+      setLoading(false);
+      return;
+    }
 
     let user;
 
@@ -198,6 +253,11 @@ export default function CreateTeaForm() {
     const uploadedMedia: MediaItem[] = [];
 
     for (const file of selectedFiles) {
+      if (file.size > 50 * 1024 * 1024) {
+        setStatusMessage("Each media file should be under 50 MB.");
+        setLoading(false);
+        return;
+      }
       const fileExt = file.name.split(".").pop();
       const fileType = getFileType(file);
       const filePath = `${user.id}/${fileType}-${Date.now()}-${Math.random()
@@ -336,7 +396,10 @@ export default function CreateTeaForm() {
             type="file"
             multiple
             accept={activeType === "image" ? "image/*" : "video/*"}
-            onChange={(event) => addFiles(event.target.files)}
+            onChange={(event) => {
+              addFiles(event.target.files);
+              event.target.value = "";
+            }}
             className="hidden"
           />
           {activeType === "video" ? (
@@ -346,7 +409,7 @@ export default function CreateTeaForm() {
           )}
           <p className="font-medium">Add {activeType === "image" ? "images" : "videos"}</p>
           <p className="mt-1 text-sm text-white/40">
-            Add multiple files. You can also switch tabs and add voice/text.
+            Add up to 8 files. You can also switch tabs and add voice/text.
           </p>
         </label>
       )}
@@ -408,7 +471,10 @@ export default function CreateTeaForm() {
               type="button"
               onClick={() => {
                 setSelectedFiles([]);
-                setRecordedAudioUrl("");
+                setRecordedAudioUrl((prevUrl) => {
+                  if (prevUrl) URL.revokeObjectURL(prevUrl);
+                  return "";
+                });
               }}
               className="text-xs text-white/40 transition hover:text-white"
             >
@@ -425,7 +491,7 @@ export default function CreateTeaForm() {
                 <div className="flex min-w-0 items-center gap-3">
                   {getFileType(file) === "image" ? (
                     <img
-                      src={URL.createObjectURL(file)}
+                      src={previewUrls[index]}
                       alt={file.name}
                       className="h-12 w-12 shrink-0 rounded-xl object-cover"
                     />
@@ -465,9 +531,10 @@ export default function CreateTeaForm() {
         </div>
       )}
       <button
+        type="button"
         onClick={handleSubmit}
         disabled={loading || (!content.trim() && selectedFiles.length === 0)}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="sticky bottom-24 z-10 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50 sm:static"
       >
         <Send size={18} />
         {loading ? "Posting..." : "Post Tea"}
