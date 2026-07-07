@@ -14,8 +14,13 @@ export function useAnonymousUser() {
 
         if (saved) {
           const user = JSON.parse(saved);
-          setUsername(user.anonymous_name);
-          return;
+
+          if (user?.anonymous_name) {
+            setUsername(user.anonymous_name);
+            return;
+          }
+
+          localStorage.removeItem("TeaTame_user");
         }
 
         const anonymous_name = generateAnonymousName();
@@ -35,12 +40,21 @@ export function useAnonymousUser() {
 
           localStorage.setItem(
             "TeaTame_user",
-            JSON.stringify({ anonymous_name })
+            JSON.stringify({
+              anonymous_name,
+              created_at: new Date().toISOString(),
+            })
           );
           return;
         }
 
-        localStorage.setItem("TeaTame_user", JSON.stringify(data));
+        localStorage.setItem(
+          "TeaTame_user",
+          JSON.stringify({
+            ...data,
+            created_at: data.created_at ?? new Date().toISOString(),
+          })
+        );
         setUsername(data.anonymous_name);
       } catch (err) {
         console.error(err);
