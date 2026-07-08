@@ -19,6 +19,7 @@ import { supabase } from "@/lib/supabase";
 type TeaTimeUser = {
   id?: string;
   anonymous_name?: string;
+  avatar?: string;
   created_at?: string;
 };
 
@@ -78,7 +79,7 @@ async function createAnonymousUser() {
       anonymous_name: anonymousName,
       avatar: getEmojiFromName(anonymousName),
     })
-    .select("id, anonymous_name, created_at")
+    .select("id, anonymous_name, avatar, created_at")
     .single();
 
   if (error || !data) {
@@ -104,11 +105,7 @@ export default function ProfilePage() {
     const prepareUser = async () => {
       const savedUser = getSavedUser();
 
-      if (
-        savedUser?.anonymous_name &&
-        savedUser.anonymous_name.trim() !== "" &&
-        savedUser.anonymous_name !== "Anonymous User"
-      ) {
+      if (savedUser?.id && savedUser?.anonymous_name) {
         setUser(savedUser);
         return;
       }
@@ -120,36 +117,52 @@ export default function ProfilePage() {
       setUser(newUser);
     };
 
-    prepareUser();
+    const timer = window.setTimeout(() => {
+      prepareUser();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
       if (!user?.id) return;
 
-      const { data: postsData } = await supabase
-        .from("posts")
-        .select("id, likes_count")
-        .eq("user_id", user.id);
+      try {
+        const { data: postsData, error: postsError } = await supabase
+          .from("posts")
+          .select("id, likes_count")
+          .eq("user_id", user.id);
 
-      const { count: commentsCount } = await supabase
-        .from("comments")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
+        if (postsError) throw postsError;
 
-      const totalLikes = (postsData || []).reduce(
-        (sum, post) => sum + (post.likes_count || 0),
-        0
-      );
+        const { count: commentsCount, error: commentsError } = await supabase
+          .from("comments")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id);
 
-      setStats({
-        posts: postsData?.length || 0,
-        comments: commentsCount || 0,
-        likes: totalLikes,
-      });
+        if (commentsError) throw commentsError;
+
+        const totalLikes = (postsData || []).reduce(
+          (sum, post) => sum + (post.likes_count || 0),
+          0
+        );
+
+        setStats({
+          posts: postsData?.length || 0,
+          comments: commentsCount || 0,
+          likes: totalLikes,
+        });
+      } catch (error) {
+        console.error("Profile stats failed:", error);
+      }
     };
 
-    fetchStats();
+    const timer = window.setTimeout(() => {
+      fetchStats();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [user?.id]);
 
   const resetIdentity = async () => {
@@ -159,7 +172,15 @@ export default function ProfilePage() {
 
     if (!confirmReset) return;
 
-    const newUser = await createAnonymousUser();
+    let newUser;
+
+    try {
+      newUser = await createAnonymousUser();
+    } catch (error) {
+      console.error(error);
+      setStatusMessage("Identity could not be reset. Please try again.");
+      return;
+    }
 
     localStorage.setItem("TeaTame_user", JSON.stringify(newUser));
     localStorage.removeItem("TeaTame_read_notifications");
@@ -174,29 +195,29 @@ export default function ProfilePage() {
     user?.anonymous_name && user.anonymous_name !== "Anonymous User"
       ? user.anonymous_name
       : "Anonymous Bear 🐻";
-  const emoji = getEmojiFromName(displayName);
+  const emoji = user?.avatar || getEmojiFromName(displayName);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#0c0611] pb-28 text-white">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,#6d28d966,transparent_35%),radial-gradient(circle_at_bottom_right,#be185d44,transparent_30%)]" />
 
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0c0611]/80 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-5 sm:py-4">
+        <nav className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white sm:px-4"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white sm:px-4"
           >
             <ArrowLeft size={16} />
             Back
           </Link>
 
-          <h1 className="font-semibold">Anonymous Profile</h1>
+          <h1 className="truncate font-semibold">Anonymous Profile</h1>
         </nav>
       </header>
 
-      <section className="mx-auto max-w-4xl space-y-5 px-4 py-5 sm:px-5 sm:py-8">
+      <section className="mx-auto max-w-4xl space-y-4 px-3 py-4 sm:space-y-5 sm:px-5 sm:py-8">
         <div className="overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.06] shadow-xl shadow-purple-500/5 backdrop-blur-xl sm:rounded-[2rem]">
-          <div className="border-b border-white/10 bg-purple-500/10 px-5 py-4">
+          <div className="border-b border-white/10 bg-purple-500/10 px-4 py-3.5 sm:px-5 sm:py-4">
             <p className="inline-flex items-center gap-2 rounded-full border border-purple-300/20 bg-purple-400/10 px-3 py-1.5 text-xs text-purple-100">
               <Sparkles size={14} />
               Your private TeaTame identity
@@ -205,11 +226,11 @@ export default function ProfilePage() {
 
           <div className="p-5 sm:p-6">
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-24 w-24 select-none items-center justify-center rounded-[2rem] border border-purple-300/30 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 text-5xl shadow-2xl shadow-purple-500/20">
+              <div className="flex h-22 w-22 select-none items-center justify-center rounded-[1.75rem] border border-purple-300/30 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 text-5xl shadow-2xl shadow-purple-500/20 sm:h-24 sm:w-24 sm:rounded-[2rem]">
                 {emoji}
               </div>
 
-              <h2 className="mt-4 text-2xl font-bold">{displayName}</h2>
+              <h2 className="mt-4 max-w-full truncate text-2xl font-bold">{displayName}</h2>
               <p className="mt-2 max-w-md text-sm leading-6 text-white/55 sm:text-base">
                 This identity stays on your device and is used for your future posts, comments, and support chats on TeaTame.
               </p>
@@ -222,17 +243,17 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:rounded-3xl sm:p-4">
             <p className="text-2xl font-bold tabular-nums">{stats.posts}</p>
             <p className="mt-1 text-xs text-white/45">Teas</p>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:rounded-3xl sm:p-4">
             <p className="text-2xl font-bold tabular-nums">{stats.comments}</p>
             <p className="mt-1 text-xs text-white/45">Comments</p>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:p-4">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:rounded-3xl sm:p-4">
             <p className="text-2xl font-bold tabular-nums">{stats.likes}</p>
             <p className="mt-1 text-xs text-white/45">Likes</p>
           </div>
@@ -247,7 +268,7 @@ export default function ProfilePage() {
         <div className="space-y-3">
           <Link
             href="/notifications"
-            className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.08]"
+            className="flex items-center justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.08] sm:rounded-3xl"
           >
             <div className="flex items-center gap-3">
               <Bell className="text-purple-200" />
@@ -259,7 +280,7 @@ export default function ProfilePage() {
             <ChevronRight size={18} className="text-white/40" />
           </Link>
 
-          <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl sm:rounded-3xl">
             <div className="flex items-center gap-3">
               <Shield className="text-purple-200" />
               <div>
@@ -274,7 +295,7 @@ export default function ProfilePage() {
 
           <Link
             href="/chat"
-            className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.08]"
+            className="flex items-center justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.08] sm:rounded-3xl"
           >
             <div className="flex items-center gap-3">
               <MessageCircle className="text-purple-200" />
@@ -289,7 +310,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={resetIdentity}
-            className="flex w-full items-center justify-between rounded-3xl border border-purple-300/20 bg-purple-500/10 p-4 text-left backdrop-blur-xl transition hover:bg-purple-500/15"
+            className="flex w-full items-center justify-between rounded-[1.35rem] border border-purple-300/20 bg-purple-500/10 p-4 text-left backdrop-blur-xl transition hover:bg-purple-500/15 sm:rounded-3xl"
           >
             <div className="flex items-center gap-3">
               <RefreshCw className="text-purple-200" />
@@ -301,7 +322,7 @@ export default function ProfilePage() {
             <ChevronRight size={18} className="text-white/40" />
           </button>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl sm:rounded-3xl">
             <div className="flex items-center gap-3">
               <Coffee className="text-purple-200" />
               <div>

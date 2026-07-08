@@ -71,14 +71,14 @@ const animals = [
   "Potato 🥔",
   "Pickle 🥒",
   "Shadow 🌑",
-  "Phantom 👻",
+  "Phantom 🎭",
   "Ghost 👻",
   "Cipher 🔐",
   "Nebula ✨",
   "Eclipse 🌘",
   "Mirage 🪞",
   "Nova ⭐",
-  "Meteor ☄️",
+  "Meteor 🌠",
   "Galaxy 🌠",
   "Storm ⛈️",
   "Lightning ⚡",
@@ -98,12 +98,26 @@ const animals = [
   "Wanderer 🌍",
   "Nomad 🏕️",
   "Guardian 🛡️",
+  "Cherry 🍒",
+  "Coconut 🥥",
+  "Strawberry 🍓",
+  "Kiwi 🥝",
+  "Firefly ✨",
+  "Rainbow 🌈",
+  "Jellyfish 🪼",
+  "Starfish ⭐",
+  "Saturn 🪐",
+  "Cherry Blossom 🌸",
+  "Daisy 🌼",
+  "Tulip 🌷",
+  "Campfire 🔥",
+  "Lantern 🏮",
+  "Treasure 🗝️",
+  "Anchor ⚓",
   "Legend 👑",
 ];
 
 export function generateAnonymousName() {
-  const animal =
-    animals[Math.floor(Math.random() * animals.length)];
-
+  const animal = animals[Math.floor(Math.random() * animals.length)];
   return `Anonymous ${animal}`;
 }

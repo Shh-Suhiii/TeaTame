@@ -289,27 +289,27 @@ export default function ChatPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0c0611] px-4 py-5 text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#0c0611] px-3 pb-28 pt-3 text-white sm:px-4 sm:py-5">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,#6d28d966,transparent_35%),radial-gradient(circle_at_bottom_right,#be185d44,transparent_30%)]" />
 
-      <section className="mx-auto flex h-[88vh] max-w-4xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.055] shadow-[0_20px_80px_rgba(168,85,247,0.12)] backdrop-blur-xl">
-        <header className="flex items-center justify-between border-b border-white/10 bg-black/10 px-4 py-4 md:px-5">
+      <section className="mx-auto flex h-[calc(100vh-8.5rem)] max-w-4xl flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.055] shadow-[0_20px_80px_rgba(168,85,247,0.12)] backdrop-blur-xl sm:h-[88vh] sm:rounded-[2rem]">
+        <header className="flex items-center justify-between gap-3 border-b border-white/10 bg-black/10 px-3 py-3 sm:px-4 sm:py-4 md:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:bg-white/10 hover:text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:bg-white/10 hover:text-white sm:h-10 sm:w-10"
             >
               <ArrowLeft size={18} />
             </Link>
 
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-lg shadow-purple-500/10 sm:h-12 sm:w-12">
               <Image
                 src="/logo3.png"
                 alt="TeaTame Logo"
                 width={56}
                 height={56}
                 priority
-                className="h-9 w-9 object-contain"
+                className="h-8 w-8 object-contain sm:h-9 sm:w-9"
               />
             </div>
 
@@ -321,20 +321,27 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <button className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm text-white/60 transition hover:bg-white/10 hover:text-white md:px-4">
+          <button
+            type="button"
+            onClick={() => {
+              setMessage("I want to report something on TeaTame. Reason: ");
+              window.setTimeout(() => messageInputRef.current?.focus(), 0);
+            }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/60 transition hover:bg-white/10 hover:text-white sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2 sm:text-sm md:px-4"
+          >
             <Flag size={16} />
             <span className="hidden sm:inline">Report</span>
           </button>
         </header>
 
-        <div className="border-b border-white/10 bg-green-400/10 px-5 py-3 text-sm text-green-100">
+        <div className="border-b border-white/10 bg-green-400/10 px-3 py-2.5 text-xs text-green-100 sm:px-5 sm:py-3 sm:text-sm">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} />
             TeaTame AI can reply instantly. Avoid sharing personal details.
           </div>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
+        <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-4 md:p-5">
           {loading && (
             <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-center text-white/55">
               Loading live chat...
@@ -342,7 +349,7 @@ export default function ChatPage() {
           )}
 
           {!loading && messages.length === 0 && (
-            <div className="mx-auto max-w-md rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 text-center backdrop-blur-xl">
+            <div className="mx-auto max-w-md rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 text-center backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/15">
                 <Sparkles className="text-purple-200" />
               </div>
@@ -354,7 +361,7 @@ export default function ChatPage() {
           )}
 
           {!loading && (
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.045] p-4">
+            <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.045] p-3.5 sm:rounded-[1.6rem] sm:p-4">
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-white/35">
                 Quick support
               </p>
@@ -369,7 +376,7 @@ export default function ChatPage() {
                         messageInputRef.current?.focus();
                       }, 0);
                     }}
-                    className="rounded-full border border-purple-300/20 bg-purple-500/10 px-4 py-2 text-sm text-purple-100 transition hover:bg-purple-500/20"
+                    className="rounded-full border border-purple-300/20 bg-purple-500/10 px-3.5 py-2 text-xs text-purple-100 transition active:scale-95 hover:bg-purple-500/20 sm:px-4 sm:text-sm"
                   >
                     {option}
                   </button>
@@ -392,13 +399,13 @@ export default function ChatPage() {
         </div>
 
         {statusMessage && (
-          <div className="mx-4 mb-2 rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm text-purple-100 md:mx-5">
+          <div className="mx-3 mb-2 rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm leading-5 text-purple-100 sm:mx-4 md:mx-5">
             {statusMessage}
           </div>
         )}
 
-        <footer className="border-t border-white/10 bg-black/10 p-4">
-          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/25 px-4 py-3 transition focus-within:border-purple-300/40">
+        <footer className="border-t border-white/10 bg-black/10 p-3 sm:p-4">
+          <div className="flex items-center gap-2 rounded-[1.35rem] border border-white/10 bg-black/25 px-3 py-3 transition focus-within:border-purple-300/40 sm:gap-3 sm:rounded-full sm:px-4">
             <input
               ref={messageInputRef}
               value={message}
@@ -410,13 +417,14 @@ export default function ChatPage() {
                 }
               }}
               placeholder="Describe your issue or choose a quick option..."
-              className="flex-1 bg-transparent text-white outline-none placeholder:text-white/35"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base"
             />
 
             <button
+              type="button"
               onClick={sendMessage}
               disabled={sending || !message.trim()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/25 transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/25 transition active:scale-95 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Send size={18} />
             </button>

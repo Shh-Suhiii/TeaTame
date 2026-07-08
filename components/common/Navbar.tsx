@@ -1,8 +1,45 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus } from "lucide-react";
+
+function getEmojiFromName(name?: string) {
+  if (!name) return "☕";
+  const emojiMatch = name.match(/[\u{1F300}-\u{1FAFF}]/u);
+  return emojiMatch?.[0] || "☕";
+}
+
+function getSavedAnonymousSign() {
+  if (typeof window === "undefined") return "☕";
+
+  try {
+    const savedUser = localStorage.getItem("TeaTame_user");
+    if (!savedUser) return "☕";
+
+    const user = JSON.parse(savedUser);
+    return user?.avatar || getEmojiFromName(user?.anonymous_name);
+  } catch {
+    return "☕";
+  }
+}
 
 export default function Navbar() {
+  const [anonymousSign, setAnonymousSign] = useState("☕");
+
+  useEffect(() => {
+    const updateSign = () => setAnonymousSign(getSavedAnonymousSign());
+
+    updateSign();
+    window.addEventListener("storage", updateSign);
+    window.addEventListener("teatame-notifications-updated", updateSign);
+
+    return () => {
+      window.removeEventListener("storage", updateSign);
+      window.removeEventListener("teatame-notifications-updated", updateSign);
+    };
+  }, []);
+
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0c0611]/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2 sm:px-5">
@@ -25,11 +62,11 @@ export default function Navbar() {
         </Link>
 
         <Link
-          href="/create"
-          className="hidden items-center gap-2 rounded-full bg-purple-500 px-4 py-2.5 text-sm font-semibold shadow-lg shadow-purple-500/20 transition hover:bg-purple-400 md:flex md:px-5 md:py-3"
+          href="/profile"
+          aria-label="Open anonymous profile"
+          className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-2xl border border-purple-300/20 bg-purple-500/10 text-xl shadow-lg shadow-purple-500/10 transition active:scale-95 hover:bg-purple-500/20 sm:h-11 sm:w-11"
         >
-          <Plus size={18} />
-          Create Tea
+          {anonymousSign}
         </Link>
       </nav>
     </header>
