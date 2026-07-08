@@ -76,7 +76,11 @@ export default function TeaCard({
   });
 
   useEffect(() => {
-    setLikesCount(likes);
+    const timer = window.setTimeout(() => {
+      setLikesCount(likes);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [likes]);
 
   const [previewMedia, setPreviewMedia] = useState<{
