@@ -27,6 +27,12 @@ const teaTypes = [
 
 const categories = ["College", "Work", "Relationship", "Confession", "Family", "Random"];
 
+const voiceEffects = [
+  { label: "Normal", value: "normal" },
+  { label: "Deep", value: "deep" },
+  { label: "Chipmunk", value: "chipmunk" },
+];
+
 type MediaItem = {
   url: string;
   type: string;
@@ -91,6 +97,75 @@ function getFileType(file: File) {
   return "file";
 }
 
+function audioBufferToWav(buffer: AudioBuffer) {
+  const numberOfChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length * numberOfChannels * 2;
+  const arrayBuffer = new ArrayBuffer(44 + length);
+  const view = new DataView(arrayBuffer);
+  const channels = Array.from({ length: numberOfChannels }, (_, index) =>
+    buffer.getChannelData(index)
+  );
+
+  const writeString = (offset: number, value: string) => {
+    for (let index = 0; index < value.length; index += 1) {
+      view.setUint8(offset + index, value.charCodeAt(index));
+    }
+  };
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + length, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numberOfChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+  view.setUint16(32, numberOfChannels * 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, length, true);
+
+  let offset = 44;
+
+  for (let index = 0; index < buffer.length; index += 1) {
+    for (let channel = 0; channel < numberOfChannels; channel += 1) {
+      const sample = Math.max(-1, Math.min(1, channels[channel][index]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([arrayBuffer], { type: "audio/wav" });
+}
+
+async function applyVoiceEffect(audioBlob: Blob, effect: string) {
+  if (effect === "normal") return audioBlob;
+
+  const audioContext = new AudioContext();
+  const originalBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
+  await audioContext.close();
+
+  const playbackRate = effect === "deep" ? 0.78 : 1.32;
+  const duration = originalBuffer.duration / playbackRate;
+
+  const offlineContext = new OfflineAudioContext(
+    originalBuffer.numberOfChannels,
+    Math.ceil(originalBuffer.sampleRate * duration),
+    originalBuffer.sampleRate
+  );
+
+  const source = offlineContext.createBufferSource();
+  source.buffer = originalBuffer;
+  source.playbackRate.value = playbackRate;
+  source.connect(offlineContext.destination);
+  source.start(0);
+
+  const renderedBuffer = await offlineContext.startRendering();
+  return audioBufferToWav(renderedBuffer);
+}
+
 export default function CreateTeaForm() {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("Random");
@@ -105,6 +180,7 @@ export default function CreateTeaForm() {
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState("");
+  const [voiceEffect, setVoiceEffect] = useState("normal");
 
   const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file));
 
@@ -178,12 +254,27 @@ export default function CreateTeaForm() {
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        const extension = mimeType.includes("mp4") ? "m4a" : "webm";
-        const audioFile = new File([audioBlob], `voice-${Date.now()}.${extension}`, {
-          type: mimeType,
-        });
+      mediaRecorder.onstop = async () => {
+const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+let processedAudioBlob = audioBlob;
+let extension = mimeType.includes("mp4") ? "m4a" : "webm";
+
+try {
+  processedAudioBlob = await applyVoiceEffect(audioBlob, voiceEffect);
+
+  if (voiceEffect !== "normal") {
+    extension = "wav";
+  }
+} catch (error) {
+  console.error(error);
+  setStatusMessage("Voice effect could not be applied. Original voice attached.");
+}
+
+const audioFile = new File(
+  [processedAudioBlob],
+  `voice-${voiceEffect}-${Date.now()}.${extension}`,
+  { type: processedAudioBlob.type || mimeType }
+);
 
         setSelectedFiles((prev) => {
           if (prev.length >= 8) {
@@ -196,7 +287,7 @@ export default function CreateTeaForm() {
 
         setRecordedAudioUrl((prevUrl) => {
           if (prevUrl) URL.revokeObjectURL(prevUrl);
-          return URL.createObjectURL(audioBlob);
+          return URL.createObjectURL(processedAudioBlob);
         });
 
         stream.getTracks().forEach((track) => track.stop());
@@ -244,6 +335,7 @@ export default function CreateTeaForm() {
     setContent("");
     setCategory("Random");
     setActiveType("text");
+    setVoiceEffect("normal");
     setSelectedFiles([]);
     setRecordedAudioUrl((prevUrl) => {
       if (prevUrl) URL.revokeObjectURL(prevUrl);
@@ -483,9 +575,27 @@ export default function CreateTeaForm() {
           <h3 className="font-semibold">Record Voice Tea</h3>
           <p className="mt-1 text-sm text-white/45">
             {isRecording
-              ? "Recording... tap stop when done"
+              ? `Recording with ${voiceEffect} effect... tap stop when done`
               : "Record voice and combine it with your text/images/videos"}
           </p>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {voiceEffects.map((effect) => (
+              <button
+                key={effect.value}
+                type="button"
+                disabled={isRecording}
+                onClick={() => setVoiceEffect(effect.value)}
+                className={`rounded-2xl border px-3 py-2 text-xs transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  voiceEffect === effect.value
+                    ? "border-purple-300/40 bg-purple-500/20 text-purple-100"
+                    : "border-white/10 bg-white/[0.05] text-white/60 hover:bg-white/[0.08]"
+                }`}
+              >
+                {effect.label}
+              </button>
+            ))}
+          </div>
 
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             {!isRecording && (
