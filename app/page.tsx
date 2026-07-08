@@ -137,6 +137,10 @@ export default function Home() {
     return matchesSearch && matchesCategory;
   });
 
+  const trendingPosts = [...teaPosts]
+    .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
+    .slice(0, 3);
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#0c0611] text-white">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,#6d28d966,transparent_35%),radial-gradient(circle_at_bottom_right,#be185d44,transparent_30%)]" />
@@ -188,20 +192,22 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="sticky top-[72px] z-10 -mx-3 flex snap-x gap-2 overflow-x-auto border-y border-white/5 bg-[#0c0611]/90 px-3 py-2.5 backdrop-blur-xl [scrollbar-width:none] sm:static sm:mx-0 sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-0 [&::-webkit-scrollbar]:hidden">
+          <div className="sticky top-[72px] z-10 -mx-3 flex snap-x gap-2 overflow-x-auto border-y border-white/5 bg-[#0c0611]/95 px-4 py-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl [scroll-padding-inline:1rem] [scrollbar-width:none] sm:static sm:mx-0 sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-0 [&::-webkit-scrollbar]:hidden">
+            <span className="w-0.5 shrink-0 sm:hidden" aria-hidden="true" />
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`shrink-0 snap-start rounded-full border px-4 py-2.5 text-xs font-semibold transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${
+                className={`shrink-0 snap-start rounded-full border px-4 py-2.5 text-xs font-semibold shadow-sm transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${
                   selectedCategory === category
-                    ? "border-purple-300/40 bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/25"
-                    : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
+                    ? "border-purple-300/40 bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/30"
+                    : "border-white/10 bg-white/[0.065] text-white/70 hover:border-purple-300/40 hover:bg-white/[0.09] hover:text-white"
                 }`}
               >
                 {category}
               </button>
             ))}
+            <span className="w-0.5 shrink-0 sm:hidden" aria-hidden="true" />
           </div>
 
           <div className="flex items-center justify-between px-1 pt-1.5">
@@ -281,6 +287,56 @@ export default function Home() {
               <p className="rounded-2xl bg-white/5 px-3 py-2">📷 Image</p>
               <p className="rounded-2xl bg-white/5 px-3 py-2">🎥 Video</p>
               <p className="rounded-2xl bg-white/5 px-3 py-2">🎤 Voice</p>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xl font-bold">🔥 Trending</h3>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/45">
+                Top 3
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {trendingPosts.length === 0 && (
+                <p className="rounded-2xl bg-white/5 px-3 py-3 text-sm text-white/45">
+                  No trending teas yet.
+                </p>
+              )}
+
+              {trendingPosts.map((post, index) => {
+                const author =
+                  post.anonymous_users?.anonymous_name &&
+                  post.anonymous_users.anonymous_name !== "Anonymous User"
+                    ? post.anonymous_users.anonymous_name
+                    : "Anonymous Bear 🐻";
+
+                return (
+                  <Link
+                    key={post.id}
+                    href={`/tea/${post.id}`}
+                    className="group block rounded-2xl border border-white/10 bg-white/[0.045] p-3 transition hover:border-purple-300/30 hover:bg-white/[0.075]"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-sm font-bold text-purple-100">
+                        #{index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-white/85">
+                          {author}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/48">
+                          {post.content || `${post.media_type || "Media"} post`}
+                        </p>
+                        <p className="mt-2 text-[11px] text-white/35">
+                          ❤️ {post.likes_count || 0} • 💬 {post.comments_count || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </aside>
