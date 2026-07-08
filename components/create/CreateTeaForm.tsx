@@ -143,7 +143,17 @@ function audioBufferToWav(buffer: AudioBuffer) {
 async function applyVoiceEffect(audioBlob: Blob, effect: string) {
   if (effect === "normal") return audioBlob;
 
-  const audioContext = new AudioContext();
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as typeof window & {
+      webkitAudioContext?: typeof AudioContext;
+    }).webkitAudioContext;
+
+  if (!AudioContextClass) {
+    throw new Error("AudioContext not supported");
+  }
+
+  const audioContext = new AudioContextClass();
   const originalBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
   await audioContext.close();
 
@@ -180,7 +190,9 @@ export default function CreateTeaForm() {
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState("");
+  const [originalRecordedAudioBlob, setOriginalRecordedAudioBlob] = useState<Blob | null>(null);
   const [voiceEffect, setVoiceEffect] = useState("normal");
+  const [processingVoiceEffect, setProcessingVoiceEffect] = useState(false);
 
   const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file));
 
@@ -188,7 +200,7 @@ export default function CreateTeaForm() {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [selectedFiles.length]);
+  }, [previewUrls]);
 
   useEffect(() => {
     return () => {
@@ -232,6 +244,46 @@ export default function CreateTeaForm() {
     setSelectedFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index));
   };
 
+  const applyEffectToRecordedVoice = async (audioBlob: Blob, effect: string) => {
+    setProcessingVoiceEffect(true);
+    setVoiceEffect(effect);
+
+    let processedAudioBlob = audioBlob;
+    let extension = "webm";
+
+    try {
+      processedAudioBlob = await applyVoiceEffect(audioBlob, effect);
+      extension = effect === "normal" ? "webm" : "wav";
+    } catch (error) {
+      console.error(error);
+      setStatusMessage("Voice effect could not be applied. Original voice attached.");
+    }
+
+    const audioFile = new File(
+      [processedAudioBlob],
+      `voice-${effect}-${crypto.randomUUID()}.${extension}`,
+      { type: processedAudioBlob.type || "audio/webm" }
+    );
+
+    setSelectedFiles((prev) => {
+      const filesWithoutOldVoice = prev.filter(
+        (file) =>
+          !file.name.startsWith("voice-normal-") &&
+          !file.name.startsWith("voice-deep-") &&
+          !file.name.startsWith("voice-chipmunk-")
+      );
+
+      return [...filesWithoutOldVoice, audioFile].slice(0, 8);
+    });
+
+    setRecordedAudioUrl((prevUrl) => {
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      return URL.createObjectURL(processedAudioBlob);
+    });
+
+    setProcessingVoiceEffect(false);
+  };
+
   const startRecording = async () => {
     if (selectedFiles.length >= 8) {
       setStatusMessage("You can attach up to 8 media files only.");
@@ -255,41 +307,9 @@ export default function CreateTeaForm() {
       };
 
       mediaRecorder.onstop = async () => {
-const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-let processedAudioBlob = audioBlob;
-let extension = mimeType.includes("mp4") ? "m4a" : "webm";
-
-try {
-  processedAudioBlob = await applyVoiceEffect(audioBlob, voiceEffect);
-
-  if (voiceEffect !== "normal") {
-    extension = "wav";
-  }
-} catch (error) {
-  console.error(error);
-  setStatusMessage("Voice effect could not be applied. Original voice attached.");
-}
-
-const audioFile = new File(
-  [processedAudioBlob],
-  `voice-${voiceEffect}-${Date.now()}.${extension}`,
-  { type: processedAudioBlob.type || mimeType }
-);
-
-        setSelectedFiles((prev) => {
-          if (prev.length >= 8) {
-            setStatusMessage("You can attach up to 8 media files only.");
-            return prev;
-          }
-
-          return [...prev, audioFile];
-        });
-
-        setRecordedAudioUrl((prevUrl) => {
-          if (prevUrl) URL.revokeObjectURL(prevUrl);
-          return URL.createObjectURL(processedAudioBlob);
-        });
-
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        setOriginalRecordedAudioBlob(audioBlob);
+        await applyEffectToRecordedVoice(audioBlob, voiceEffect);
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -465,11 +485,10 @@ const audioFile = new File(
               key={type.title}
               type="button"
               onClick={() => handleTypeSelect(type.value)}
-              className={`rounded-[1.25rem] border p-3 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${
-                activeType === type.value
+              className={`rounded-[1.25rem] border p-3 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${activeType === type.value
                   ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
                   : "border-white/10 bg-black/20 hover:border-purple-300/40 hover:bg-purple-500/10"
-              }`}
+                }`}
             >
               <Icon size={20} className="mb-2 text-purple-200 sm:mb-3" />
               <h3 className="text-sm font-semibold sm:text-base">{type.title}</h3>
@@ -516,11 +535,10 @@ const audioFile = new File(
               key={item}
               type="button"
               onClick={() => setCategory(item)}
-              className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition active:scale-95 md:text-sm ${
-                category === item
+              className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition active:scale-95 md:text-sm ${category === item
                   ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
                   : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
-              }`}
+                }`}
             >
               {item}
             </button>
@@ -572,7 +590,7 @@ const audioFile = new File(
             )}
           </div>
 
-          <h3 className="font-semibold">Record Voice Tea</h3>
+          <h3 className="font-semibold">Anonymous Voice Tea</h3>
           <p className="mt-1 text-sm text-white/45">
             {isRecording
               ? `Recording with ${voiceEffect} effect... tap stop when done`
@@ -584,15 +602,26 @@ const audioFile = new File(
               <button
                 key={effect.value}
                 type="button"
-                disabled={isRecording}
-                onClick={() => setVoiceEffect(effect.value)}
-                className={`rounded-2xl border px-3 py-2 text-xs transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
-                  voiceEffect === effect.value
+                disabled={isRecording || processingVoiceEffect}
+                onClick={() => {
+                  if (originalRecordedAudioBlob) {
+                    applyEffectToRecordedVoice(originalRecordedAudioBlob, effect.value);
+                    return;
+                  }
+
+                  setVoiceEffect(effect.value);
+                }}
+                className={`rounded-2xl border px-3 py-2 text-xs transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${voiceEffect === effect.value
                     ? "border-purple-300/40 bg-purple-500/20 text-purple-100"
                     : "border-white/10 bg-white/[0.05] text-white/60 hover:bg-white/[0.08]"
-                }`}
+                  }`}
               >
                 {effect.label}
+                {voiceEffect === effect.value && (
+
+                  <span className="ml-1 text-[10px] text-purple-100">✓</span>
+
+                )}
               </button>
             ))}
           </div>
