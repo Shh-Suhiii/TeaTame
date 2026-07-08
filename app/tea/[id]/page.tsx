@@ -187,6 +187,39 @@ export default function TeaDetailPage() {
     };
 
     fetchPostAndComments();
+
+    const postsChannel = supabase
+      .channel(`tea-detail-post-${postId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "posts",
+          filter: `id=eq.${postId}`,
+        },
+        fetchPostAndComments
+      )
+      .subscribe();
+
+    const commentsChannel = supabase
+      .channel(`tea-detail-comments-${postId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments",
+          filter: `post_id=eq.${postId}`,
+        },
+        fetchPostAndComments
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(commentsChannel);
+    };
   }, [postId]);
 
   const handleCommentSubmit = async () => {
@@ -233,7 +266,13 @@ export default function TeaDetailPage() {
       return;
     }
 
-    const nextCommentsCount = (post?.comments_count || 0) + 1;
+    const { data: latestPost } = await supabase
+      .from("posts")
+      .select("comments_count")
+      .eq("id", postId)
+      .single();
+
+    const nextCommentsCount = (latestPost?.comments_count || post?.comments_count || 0) + 1;
 
     const { error: updateCountError } = await supabase
       .from("posts")
@@ -262,14 +301,16 @@ export default function TeaDetailPage() {
 
     setUpdatingLike(true);
 
-    const currentlyLiked = localStorage.getItem(likeKey) === "true";
-    const nextLiked = !currentlyLiked;
-    const nextLikesCount = nextLiked
-      ? (post.likes_count || 0) + 1
-      : Math.max((post.likes_count || 0) - 1, 0);
+    const previousPost = post;
+    const previousLiked = isLiked;
+    const previousLikes = post.likes_count || 0;
+    const nextLiked = !previousLiked;
+    const optimisticLikes = nextLiked
+      ? previousLikes + 1
+      : Math.max(previousLikes - 1, 0);
 
     setIsLiked(nextLiked);
-    setPost({ ...post, likes_count: nextLikesCount });
+    setPost({ ...post, likes_count: optimisticLikes });
 
     if (nextLiked) {
       localStorage.setItem(likeKey, "true");
@@ -277,24 +318,52 @@ export default function TeaDetailPage() {
       localStorage.removeItem(likeKey);
     }
 
-    const { error } = await supabase
-      .from("posts")
-      .update({ likes_count: nextLikesCount })
-      .eq("id", postId);
+    try {
+      const { data: latestPost, error: fetchError } = await supabase
+        .from("posts")
+        .select("likes_count")
+        .eq("id", postId)
+        .single();
 
-    if (error) {
-      console.error("Like update failed:", error.message);
-      setIsLiked(isLiked);
-      setPost(post);
-      if (isLiked) {
+      if (fetchError) throw fetchError;
+
+      const latestLikes = latestPost?.likes_count || 0;
+      const nextLikes = nextLiked
+        ? latestLikes + 1
+        : Math.max(latestLikes - 1, 0);
+
+      const { data: updatedPost, error: updateError } = await supabase
+        .from("posts")
+        .update({ likes_count: nextLikes })
+        .eq("id", postId)
+        .select("likes_count")
+        .single();
+
+      if (updateError) throw updateError;
+
+      setPost((prev) =>
+        prev
+          ? {
+              ...prev,
+              likes_count: updatedPost?.likes_count || nextLikes,
+            }
+          : prev
+      );
+    } catch (error) {
+      console.error("Like update failed:", error);
+      setIsLiked(previousLiked);
+      setPost(previousPost);
+
+      if (previousLiked) {
         localStorage.setItem(likeKey, "true");
       } else {
         localStorage.removeItem(likeKey);
       }
-      alert("Failed to update like.");
-    }
 
-    setUpdatingLike(false);
+      alert("Failed to update like.");
+    } finally {
+      setUpdatingLike(false);
+    }
   };
 
   if (loading) {
@@ -320,7 +389,11 @@ export default function TeaDetailPage() {
     );
   }
 
-  const author = post.anonymous_users?.anonymous_name || "Anonymous User";
+  const author =
+    post.anonymous_users?.anonymous_name &&
+    post.anonymous_users.anonymous_name !== "Anonymous User"
+      ? post.anonymous_users.anonymous_name
+      : "Anonymous Bear 🐻";
   const mediaItems = post.media_items || [];
 
   return (
@@ -419,6 +492,7 @@ export default function TeaDetailPage() {
 
           <div className="mt-5 grid grid-cols-2 gap-2 border-t border-white/10 pt-4 sm:flex sm:items-center sm:gap-3">
             <button
+              type="button"
               onClick={handleLike}
               disabled={updatingLike}
               className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm transition disabled:opacity-60 ${
@@ -430,7 +504,7 @@ export default function TeaDetailPage() {
               <Heart size={17} fill={isLiked ? "currentColor" : "none"} />
               {post.likes_count || 0}
             </button>
-            <button className="flex items-center justify-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm text-white/70">
+            <button type="button" className="flex items-center justify-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm text-white/70">
               <MessageCircle size={17} />
               {Math.max(post.comments_count || 0, comments.length)} comments
             </button>
@@ -459,9 +533,10 @@ export default function TeaDetailPage() {
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base"
             />
             <button
+              type="button"
               onClick={handleCommentSubmit}
               disabled={postingComment}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500 transition hover:bg-purple-400 disabled:opacity-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500 transition active:scale-95 hover:bg-purple-400 disabled:opacity-50"
             >
               <Send size={18} />
             </button>
@@ -470,13 +545,17 @@ export default function TeaDetailPage() {
 
         <div className="space-y-3 sm:space-y-4">
           {comments.length === 0 && (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-center text-white/55 backdrop-blur-xl">
+            <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 text-center text-white/55 backdrop-blur-xl sm:rounded-3xl">
               No comments yet. Be the first anonymous reply.
             </div>
           )}
 
           {comments.map((item) => {
-            const commentAuthor = item.anonymous_users?.anonymous_name || "Anonymous User";
+            const commentAuthor =
+              item.anonymous_users?.anonymous_name &&
+              item.anonymous_users.anonymous_name !== "Anonymous User"
+                ? item.anonymous_users.anonymous_name
+                : "Anonymous Bear 🐻";
 
             return (
               <div
