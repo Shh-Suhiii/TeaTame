@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart, MessageCircle, Headphones, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -75,6 +75,10 @@ export default function TeaCard({
     return localStorage.getItem(likeKey) === "true";
   });
 
+  useEffect(() => {
+    setLikesCount(likes);
+  }, [likes]);
+
   const [previewMedia, setPreviewMedia] = useState<{
     url: string;
     type: string;
@@ -89,9 +93,12 @@ export default function TeaCard({
     const previousLiked = isLiked;
     const previousLikes = likesCount;
     const nextLiked = !previousLiked;
-    const nextLikes = nextLiked ? previousLikes + 1 : Math.max(previousLikes - 1, 0);
 
-    setLikesCount(nextLikes);
+    const optimisticLikes = nextLiked
+      ? previousLikes + 1
+      : Math.max(previousLikes - 1, 0);
+
+    setLikesCount(optimisticLikes);
     setIsLiked(nextLiked);
 
     if (nextLiked) {
@@ -101,12 +108,29 @@ export default function TeaCard({
     }
 
     try {
-      const { error } = await supabase
+      const { data: latestPost, error: fetchError } = await supabase
+        .from("posts")
+        .select("likes_count")
+        .eq("id", String(id))
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const latestLikes = latestPost?.likes_count || 0;
+      const nextLikes = nextLiked
+        ? latestLikes + 1
+        : Math.max(latestLikes - 1, 0);
+
+      const { data: updatedPost, error: updateError } = await supabase
         .from("posts")
         .update({ likes_count: nextLikes })
-        .eq("id", String(id));
+        .eq("id", String(id))
+        .select("likes_count")
+        .single();
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      setLikesCount(updatedPost?.likes_count || nextLikes);
     } catch (error) {
       console.error(error);
       setLikesCount(previousLikes);
