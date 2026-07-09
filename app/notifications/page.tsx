@@ -363,7 +363,7 @@ export default function NotificationsPage() {
           >
             <CheckCheck size={14} className="mr-1 inline" />
             <span className="hidden sm:inline">Mark all read</span>
-            <span className="sm:hidden">Read</span>
+            <span className="sm:hidden">✓</span>
           </button>
         </nav>
       </header>
@@ -377,10 +377,10 @@ export default function NotificationsPage() {
             </p>
           </div>
 
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Stay in the loop</h2>
+                <h2 className="text-xl font-bold sm:text-2xl">Stay in the loop</h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-white/55 sm:text-base">
                   Track reactions, anonymous comments, support replies, and safety updates in one place.
                 </p>
@@ -420,7 +420,7 @@ export default function NotificationsPage() {
                   onClick={() => {
                     if (!item.isRead) markOneRead(item.id);
                   }}
-                  className={`group w-full rounded-3xl border p-4 text-left backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:shadow-xl hover:shadow-purple-500/10 sm:p-5 ${
+                  className={`group w-full rounded-[1.35rem] sm:rounded-3xl border p-4 text-left backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:shadow-xl hover:shadow-purple-500/10 sm:p-5 ${
                     item.isRead
                       ? "border-white/10 bg-white/[0.045]"
                       : "border-purple-300/20 bg-purple-500/[0.09]"

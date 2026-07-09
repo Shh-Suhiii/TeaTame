@@ -25,7 +25,14 @@ const teaTypes = [
   { title: "Voice", value: "audio", icon: Mic, hint: "Record audio" },
 ];
 
-const categories = ["College", "Work", "Relationship", "Confession", "Family", "Random"];
+const categories = [
+  "🎓 College",
+  "💼 Work",
+  "❤️ Relationship",
+  "🤫 Confession",
+  "👨‍👩‍👧 Family",
+  "☕ Random",
+];
 
 const voiceEffects = [
   { label: "Normal", value: "normal" },
@@ -178,7 +185,7 @@ async function applyVoiceEffect(audioBlob: Blob, effect: string) {
 
 export default function CreateTeaForm() {
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("Random");
+  const [category, setCategory] = useState("☕ Random");
   const [activeType, setActiveType] = useState("text");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -354,7 +361,7 @@ export default function CreateTeaForm() {
 
   const clearForm = () => {
     setContent("");
-    setCategory("Random");
+    setCategory("☕ Random");
     setActiveType("text");
     setSelectedFiles([]);
     setOriginalRecordedAudioBlob(null);
@@ -493,12 +500,12 @@ export default function CreateTeaForm() {
               key={type.title}
               type="button"
               onClick={() => handleTypeSelect(type.value)}
-              className={`rounded-[1.25rem] border p-3 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${activeType === type.value
+              className={`rounded-[1.25rem] border px-3 py-2.5 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${activeType === type.value
                 ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
                 : "border-white/10 bg-black/20 hover:border-purple-300/40 hover:bg-purple-500/10"
                 }`}
             >
-              <Icon size={20} className="mb-2 text-purple-200 sm:mb-3" />
+              <Icon size={18} className="mb-1.5 text-purple-200 sm:mb-3" />
               <h3 className="text-sm font-semibold sm:text-base">{type.title}</h3>
               <p className="mt-1 text-[11px] text-white/40 sm:text-xs">{type.hint}</p>
               {activeType === type.value && (
@@ -543,7 +550,7 @@ export default function CreateTeaForm() {
               key={item}
               type="button"
               onClick={() => setCategory(item)}
-              className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition active:scale-95 md:text-sm ${category === item
+              className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition active:scale-95 md:text-sm ${category === item
                 ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
                 : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
                 }`}
@@ -558,7 +565,7 @@ export default function CreateTeaForm() {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Spill your tea here... add caption, context, or story."
-        className="min-h-32 w-full resize-none rounded-[1.35rem] border border-white/10 bg-black/25 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 sm:rounded-3xl sm:p-5 sm:text-base md:min-h-44"
+        className="min-h-28 w-full resize-none rounded-[1.35rem] border border-white/10 bg-black/25 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 sm:min-h-32 sm:rounded-3xl sm:p-5 sm:text-base md:min-h-44"
       />
       <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] leading-4 text-white/45 sm:mb-5 sm:text-xs">
         Keep it anonymous. Avoid real names, phone numbers, addresses, or personal details.
@@ -602,7 +609,7 @@ export default function CreateTeaForm() {
           <p className="mt-1 text-sm text-white/45">
             {isRecording
               ? `Recording with ${voiceEffect} effect... tap stop when done`
-              : "Record voice and combine it with your text/images/videos"}
+              : "Record an anonymous voice note."}
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
@@ -626,9 +633,7 @@ export default function CreateTeaForm() {
               >
                 {effect.label}
                 {voiceEffect === effect.value && (
-
                   <span className="ml-1 text-[10px] text-purple-100">✓</span>
-
                 )}
               </button>
             ))}
@@ -686,6 +691,9 @@ export default function CreateTeaForm() {
               type="button"
               onClick={() => {
                 setSelectedFiles([]);
+                setOriginalRecordedAudioBlob(null);
+                setVoiceEffect("normal");
+                setProcessingVoiceEffect(false);
                 setRecordedAudioUrl((prevUrl) => {
                   if (prevUrl) URL.revokeObjectURL(prevUrl);
                   return "";
@@ -708,14 +716,14 @@ export default function CreateTeaForm() {
                     <img
                       src={previewUrls[index]}
                       alt={file.name}
-                      className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                      className="h-10 w-10 shrink-0 rounded-xl object-cover"
                     />
                   ) : getFileType(file) === "video" ? (
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg">
                       🎥
                     </div>
                   ) : (
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg">
                       🎤
                     </div>
                   )}
@@ -746,20 +754,17 @@ export default function CreateTeaForm() {
         </div>
       )}
       {showSuccessPopup && (
-  <div className="fixed left-1/2 top-6 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-3xl border border-purple-300/25 bg-[#16091f]/95 px-5 py-4 text-center shadow-[0_20px_70px_rgba(168,85,247,0.28)] backdrop-blur-xl sm:top-8">
-    <p className="text-lg font-bold text-white">
-      Tea posted successfully ☕
-    </p>
-    <p className="mt-1 text-sm text-white/55">
-      Your anonymous tea is live.
-    </p>
-  </div>
-)}
+        <div className="fixed left-1/2 top-6 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-3xl border border-purple-300/25 bg-[#16091f]/95 px-5 py-4 text-center shadow-[0_20px_70px_rgba(168,85,247,0.28)] backdrop-blur-xl sm:top-8">
+          <div className="mb-2 text-3xl">☕</div>
+          <p className="text-lg font-bold text-white">Tea posted successfully ☕</p>
+          <p className="mt-1 text-sm text-white/55">Your anonymous tea is live.</p>
+        </div>
+      )}
       <button
         type="button"
         onClick={handleSubmit}
         disabled={loading || (!content.trim() && selectedFiles.length === 0)}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7">
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-[1.4rem] bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 hover:shadow-purple-500/30 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7">
         <Send size={18} />
         {loading ? "Posting..." : "Post Tea"}
       </button>
