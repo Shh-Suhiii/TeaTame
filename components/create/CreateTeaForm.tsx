@@ -759,8 +759,7 @@ export default function CreateTeaForm() {
         type="button"
         onClick={handleSubmit}
         disabled={loading || (!content.trim() && selectedFiles.length === 0)}
-        className="sticky bottom-24 z-10 mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50 sm:static sm:static sm:mt-7"
-      >
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7">
         <Send size={18} />
         {loading ? "Posting..." : "Post Tea"}
       </button>
