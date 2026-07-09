@@ -179,7 +179,7 @@ export default function Home() {
                   <Sparkles size={14} />
                   Anonymous feed
                 </p>
-                <h2 className="max-w-2xl text-[2.25rem] font-black leading-[1.04] tracking-tight sm:text-4xl md:text-5xl">
+                <h2 className="max-w-2xl bg-gradient-to-r from-purple-200 via-white to-fuchsia-300 bg-clip-text text-[2.25rem] font-black leading-[1.04] tracking-tight text-transparent sm:text-4xl md:text-5xl">
                   What&apos;s the tea?
                 </h2>
                 <p className="mt-2.5 max-w-2xl text-[13px] leading-6 text-white/62 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
@@ -227,7 +227,7 @@ export default function Home() {
                 <p className="text-[10px] text-white/35">Live Feed</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-2 text-center">
-                <p className="text-sm font-bold">Private</p>
+                <p className="text-sm font-bold">No ID</p>
                 <p className="text-[10px] text-white/35">Needed</p>
               </div>
             </div>
@@ -244,8 +244,8 @@ export default function Home() {
                   setFeedFilter("latest");
                 }}
                 className={`shrink-0 snap-start rounded-full border px-[1.125rem] py-3 text-xs font-semibold shadow-sm transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${selectedCategory === category
-                    ? "border-purple-300/40 bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/30"
-                    : "border-white/10 bg-white/[0.065] text-white/70 hover:border-purple-300/40 hover:bg-white/[0.09] hover:text-white"
+                  ? "border-purple-300/40 bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/30"
+                  : "border-white/10 bg-white/[0.065] text-white/70 hover:border-purple-300/40 hover:bg-white/[0.09] hover:text-white"
                   }`}
               >
                 {category}
@@ -255,41 +255,40 @@ export default function Home() {
           </div>
 
           <div className="-mt-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-  {[
-    { key: "latest", label: "🆕 Latest" },
-    { key: "liked", label: "❤️ Most Liked" },
-    { key: "commented", label: "💬 Discussed" },
-  ].map((filter) => (
-    <button
-      key={filter.key}
-      type="button"
-      onClick={() => {
-        setFeedFilter(
-          filter.key as "latest" | "liked" | "commented"
-        );
-        setVisiblePostCount(8);
-      }}
-      className={`shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition active:scale-95 ${
-        feedFilter === filter.key
-          ? "border-purple-300/30 bg-purple-500/20 text-purple-100"
-          : "border-white/10 bg-white/[0.05] text-white/55 hover:bg-white/[0.08]"
-      }`}
-    >
-      {filter.label}
-    </button>
-  ))}
-</div>
+            {[
+              { key: "latest", label: "🆕 Latest" },
+              { key: "liked", label: "❤️ Most Liked" },
+              { key: "commented", label: "💬 Discussed" },
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => {
+                  setFeedFilter(
+                    filter.key as "latest" | "liked" | "commented"
+                  );
+                  setVisiblePostCount(8);
+                }}
+                className={`shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition active:scale-95 ${feedFilter === filter.key
+                    ? "border-purple-300/30 bg-purple-500/20 text-purple-100"
+                    : "border-white/10 bg-white/[0.05] text-white/55 hover:bg-white/[0.08]"
+                  }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
 
           <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] px-4 py-3 backdrop-blur-xl sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:backdrop-blur-0">
             <div className="flex items-center justify-between">
               <div>
-<h3 className="text-lg font-black text-white/95">
-  {feedFilter === "liked"
-    ? "Most Liked"
-    : feedFilter === "commented"
-    ? "Most Discussed"
-    : "Latest Teas"}
-</h3>
+                <h3 className="text-lg font-black text-white/95">
+                  {feedFilter === "liked"
+                    ? "Most Liked"
+                    : feedFilter === "commented"
+                      ? "Most Discussed"
+                      : "Latest Teas"}
+                </h3>
                 <p className="text-[11px] text-white/35">Fresh anonymous posts</p>
               </div>
               <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/50">
@@ -298,7 +297,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="space-y-5 sm:space-y-5">
+          <div className="space-y-6 sm:space-y-6">
             {loadingPosts && (
               <div className="flex flex-col items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-6 backdrop-blur-xl sm:rounded-[2rem]">
                 <span className="mb-3 flex items-center justify-center">
@@ -309,10 +308,14 @@ export default function Home() {
             )}
 
             {!loadingPosts && filteredPosts.length === 0 && (
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-6 text-center backdrop-blur-xl sm:rounded-[2rem]">
-                <h3 className="text-xl font-bold">☕ No tea found</h3>
-                <p className="mt-2 text-white/55">Try another search or category.</p>
-                <p className="mt-1 text-xs text-white/35">Be the first to spill the tea ☕</p>
+              <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.06] px-6 py-8 text-center backdrop-blur-xl sm:rounded-[2rem]">
+                <h3 className="text-xl font-bold">Nothing spilled yet ☕</h3>
+                <p className="mt-2 text-white/55">
+                  Try another keyword or category.
+                </p>
+                <p className="mt-1 text-xs text-white/35">
+                  Be the first to spill some tea.
+                </p>
               </div>
             )}
 

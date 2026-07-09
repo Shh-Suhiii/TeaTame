@@ -162,6 +162,8 @@ export default function TeaCard({
 
   const displayAuthor = getStableAnonymousName(id, author);
   const displayEmoji = getAuthorEmoji(displayAuthor, emoji);
+  const hasVoiceTea = displayMedia.some((item) => item.type === "audio");
+  const onlyVoiceTea = displayMedia.length > 0 && displayMedia.every((item) => item.type === "audio");
 
   return (
     <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-3.5 shadow-xl shadow-purple-500/5 backdrop-blur-xl transition hover:border-purple-300/30 hover:bg-white/[0.075] sm:rounded-[2rem] sm:p-4 md:p-5">
@@ -192,7 +194,14 @@ export default function TeaCard({
         </Link>
       )}
 
-      {displayMedia.length > 0 && (
+      {hasVoiceTea && !onlyVoiceTea && (
+        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-purple-300/20 bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-100">
+          <span>🎤</span>
+          <span>Voice Tea</span>
+        </div>
+      )}
+
+      {displayMedia.length > 0 && !onlyVoiceTea && (
         <div
           className={`mt-3 grid aspect-square overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20 sm:mt-4 sm:rounded-[1.6rem] ${
             visibleMedia.length === 1 ? "grid-cols-1" : "grid-cols-2"
@@ -250,13 +259,33 @@ export default function TeaCard({
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 sm:flex sm:flex-wrap sm:items-center sm:pt-4">
+      {onlyVoiceTea && (
+        <button
+          type="button"
+          onClick={() => setPreviewMedia(displayMedia[0])}
+          className="mt-3 flex w-full items-center justify-between gap-3 rounded-[1.25rem] border border-purple-300/20 bg-gradient-to-r from-purple-500/15 to-fuchsia-500/10 px-4 py-2.5 text-left transition active:scale-[0.99] hover:bg-purple-500/15 sm:mt-4 sm:rounded-[1.5rem] sm:px-5 sm:py-4"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/20 text-xl">
+              🎤
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white/90">Voice Tea</p>
+              <p className="text-xs text-white/45">Tap to listen anonymously</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-white/70">
+            Listen
+          </span>
+        </button>
+      )}
+      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 sm:mt-4 sm:flex sm:flex-wrap sm:items-center sm:pt-4">
         <button
           type="button"
           onClick={handleLike}
           disabled={isUpdatingLike}
           aria-label={isLiked ? "Unlike tea" : "Like tea"}
-          className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm transition active:scale-95 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`flex items-center justify-center gap-2 rounded-full px-3 py-1.5 text-sm transition active:scale-95 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60 ${
             isLiked
               ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20"
               : "bg-white/5 text-white/70 hover:text-white"
@@ -268,7 +297,7 @@ export default function TeaCard({
 
         <Link
           href={`/tea/${id}`}
-          className="flex items-center justify-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm text-white/70 transition active:scale-95 hover:bg-white/10 hover:text-white"
+          className="flex items-center justify-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-sm text-white/70 transition active:scale-95 hover:bg-white/10 hover:text-white"
         >
           <MessageCircle size={17} />
           {comments} comments
@@ -276,10 +305,10 @@ export default function TeaCard({
 
         <Link
           href="/chat"
-          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-purple-300/25 px-4 py-2 text-sm text-purple-100 transition active:scale-95 hover:bg-purple-500/15 sm:ml-auto"
+          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-purple-300/25 px-3 py-1.5 text-sm text-purple-100 transition active:scale-95 hover:bg-purple-500/15 sm:ml-auto"
         >
           <Headphones size={16} />
-          Talk to TeaTame
+          Talk to Admin
         </Link>
       </div>
 
@@ -320,9 +349,10 @@ export default function TeaCard({
             )}
 
             {previewMedia.type === "audio" && (
-              <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 p-6 text-center">
+              <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 p-5 text-center sm:min-h-[260px] sm:p-6">
                 <div className="text-5xl">🎤</div>
                 <h3 className="text-xl font-bold text-white">Voice Tea</h3>
+                <p className="text-sm text-white/50">Tap play to listen anonymously</p>
                 <audio src={previewMedia.url} controls className="w-full max-w-xl" />
               </div>
             )}
