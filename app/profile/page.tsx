@@ -7,6 +7,7 @@ import {
   Bell,
   ChevronRight,
   Coffee,
+  // Heart,
   MessageCircle,
   RefreshCw,
   Shield,
@@ -211,7 +212,7 @@ export default function ProfilePage() {
             Back
           </Link>
 
-          <h1 className="truncate font-semibold">Anonymous Profile</h1>
+          <h1 className="truncate font-semibold">Profile</h1>
         </nav>
       </header>
 
@@ -226,7 +227,7 @@ export default function ProfilePage() {
 
           <div className="p-5 sm:p-6">
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-22 w-22 select-none items-center justify-center rounded-[1.75rem] border border-purple-300/30 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 text-5xl shadow-2xl shadow-purple-500/20 sm:h-24 sm:w-24 sm:rounded-[2rem]">
+              <div className="flex h-20 w-20 select-none items-center justify-center rounded-[1.6rem] border border-purple-300/30 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 text-4xl shadow-2xl shadow-purple-500/20 sm:h-24 sm:w-24 sm:rounded-[2rem] sm:text-5xl">
                 {emoji}
               </div>
 
@@ -236,7 +237,7 @@ export default function ProfilePage() {
               </p>
 
               <div className="mt-4 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/45">
-                Joined {formatJoinedDate(user?.created_at)} • Private by default
+                🔒 Private • Joined {formatJoinedDate(user?.created_at)}
               </div>
             </div>
           </div>
@@ -244,17 +245,17 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:rounded-3xl sm:p-4">
-            <p className="text-2xl font-bold tabular-nums">{stats.posts}</p>
+            <p className="text-2xl font-bold tabular-nums">☕ {stats.posts}</p>
             <p className="mt-1 text-xs text-white/45">Teas</p>
           </div>
 
           <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:rounded-3xl sm:p-4">
-            <p className="text-2xl font-bold tabular-nums">{stats.comments}</p>
+            <p className="text-2xl font-bold tabular-nums">💬 {stats.comments}</p>
             <p className="mt-1 text-xs text-white/45">Comments</p>
           </div>
 
           <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-3 text-center backdrop-blur-xl sm:rounded-3xl sm:p-4">
-            <p className="text-2xl font-bold tabular-nums">{stats.likes}</p>
+            <p className="text-2xl font-bold tabular-nums">❤️ {stats.likes}</p>
             <p className="mt-1 text-xs text-white/45">Likes</p>
           </div>
         </div>
@@ -277,7 +278,7 @@ export default function ProfilePage() {
                 <p className="text-xs text-white/40">Likes, comments, and TeaTame updates</p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-white/40" />
+            <ChevronRight size={18} className="text-white/30" />
           </Link>
 
           <div className="flex items-center justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl sm:rounded-3xl">
@@ -289,7 +290,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <span className="rounded-full bg-green-400/10 px-3 py-1 text-xs text-green-200">
-              Active
+              🔒 Active
             </span>
           </div>
 
@@ -304,16 +305,16 @@ export default function ProfilePage() {
                 <p className="text-xs text-white/40">Ask AI support or request admin review</p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-white/40" />
+            <ChevronRight size={18} className="text-white/30" />
           </Link>
 
           <button
             type="button"
             onClick={resetIdentity}
-            className="flex w-full items-center justify-between rounded-[1.35rem] border border-purple-300/20 bg-purple-500/10 p-4 text-left backdrop-blur-xl transition hover:bg-purple-500/15 sm:rounded-3xl"
+            className="flex w-full items-center justify-between rounded-[1.35rem] border border-orange-300/20 bg-orange-500/10 p-4 text-left backdrop-blur-xl transition hover:bg-orange-500/15 sm:rounded-3xl"
           >
             <div className="flex items-center gap-3">
-              <RefreshCw className="text-purple-200" />
+              <RefreshCw className="text-orange-200" />
               <div>
                 <span className="font-medium">Reset Anonymous Identity</span>
                 <p className="text-xs text-white/40">Get a new anonymous name for future activity</p>
@@ -323,17 +324,31 @@ export default function ProfilePage() {
           </button>
 
           <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl sm:rounded-3xl">
-            <div className="flex items-center gap-3">
+            <div className="mb-3 flex items-center gap-3">
               <Coffee className="text-purple-200" />
-              <div>
-                <span className="font-medium">TeaTame Guidelines</span>
-                <ul className="mt-2 space-y-1 text-xs leading-5 text-white/40">
-                  <li>• Keep posts anonymous and avoid sharing real names, phone numbers, addresses, or private details.</li>
-                  <li>• Be respectful while commenting, even when sharing strong opinions or confessions.</li>
-                  <li>• Do not post bullying, threats, hate, harassment, or harmful content.</li>
-                  <li>• Report posts or comments that feel unsafe, abusive, or privacy-breaking.</li>
-                </ul>
-              </div>
+              <span className="font-medium">TeaTame Guidelines</span>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                ["🔒", "Stay Anonymous", "Avoid real names, phone numbers, addresses, or private details."],
+                ["💜", "Be Respectful", "Share opinions without bullying or targeting anyone."],
+                ["🚫", "No Harassment", "Threats, hate, abuse, and harmful content are not allowed."],
+                ["⚠️", "Report Unsafe Content", "Use support when something feels abusive or privacy-breaking."],
+              ].map(([icon, title, text]) => (
+                <div
+                  key={title}
+                  className="rounded-2xl border border-white/10 bg-white/[0.045] p-3"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">{icon}</span>
+                    <div>
+                      <p className="text-sm font-medium text-white/90">{title}</p>
+                      <p className="mt-1 text-xs leading-5 text-white/40">{text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
