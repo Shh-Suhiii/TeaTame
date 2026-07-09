@@ -42,6 +42,8 @@ type Chat = {
   id: string;
   created_at: string | null;
   user1: string | null;
+  latestMessage?: string;
+  latestMessageTime?: string;
   anonymous_users: {
     anonymous_name: string;
   } | null;
@@ -75,7 +77,7 @@ function formatDate(dateString?: string | null) {
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"posts" | "comments" | "chats">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "comments" | "chats" | "announcements">("posts");
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -85,6 +87,35 @@ export default function AdminPage() {
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [announcement, setAnnouncement] = useState("");
+  const [postingAnnouncement, setPostingAnnouncement] = useState(false);
+  const postAsTeaTame = async () => {
+    if (!announcement.trim()) return;
+
+    setPostingAnnouncement(true);
+
+    const { error } = await supabase
+      .from("posts")
+      .insert({
+        content: announcement.trim(),
+        category: "Announcement",
+        media_type: "text",
+        is_admin_post: true,
+        admin_name: "TeaTame",
+      });
+
+    setPostingAnnouncement(false);
+
+    if (error) {
+      console.error(error);
+      setStatusMessage("Failed to publish announcement.");
+      return;
+    }
+
+    setAnnouncement("");
+    setStatusMessage("TeaTame announcement posted.");
+    refreshAdmin();
+  };
 
   const stats = useMemo(
     () => [
@@ -184,7 +215,7 @@ export default function AdminPage() {
 
     const { data: latestMessages, error: latestError } = await supabase
       .from("messages")
-      .select("chat_id, created_at")
+      .select("chat_id, message, created_at")
       .in("chat_id", chatIds)
       .order("created_at", { ascending: false });
 
@@ -194,24 +225,51 @@ export default function AdminPage() {
       return;
     }
 
-    const latestMessageMap = new Map<string, string>();
+    const latestMessageMap = new Map<
+  string,
+  {
+    message: string;
+    created_at: string;
+  }
+>();
 
-    ((latestMessages || []) as { chat_id: string; created_at: string | null }[]).forEach(
-      (message) => {
-        if (!latestMessageMap.has(message.chat_id) && message.created_at) {
-          latestMessageMap.set(message.chat_id, message.created_at);
-        }
-      }
-    );
-
+((latestMessages || []) as {
+  chat_id: string;
+  message: string;
+  created_at: string | null;
+}[]).forEach((message) => {
+  if (!latestMessageMap.has(message.chat_id) && message.created_at) {
+    latestMessageMap.set(message.chat_id, {
+      message: message.message,
+      created_at: message.created_at,
+    });
+  }
+});
     const sortedChats = [...chatRows].sort((a, b) => {
-      const aTime = latestMessageMap.get(a.id) || a.created_at || "";
-      const bTime = latestMessageMap.get(b.id) || b.created_at || "";
+const aTime =
+  latestMessageMap.get(a.id)?.created_at ||
+  a.created_at ||
+  "";
+
+const bTime =
+  latestMessageMap.get(b.id)?.created_at ||
+  b.created_at ||
+  "";
 
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
 
-    setChats(sortedChats);
+    const chatsWithMessages = sortedChats.filter((chat) =>
+  latestMessageMap.has(chat.id)
+);
+
+const enrichedChats = chatsWithMessages.map((chat) => ({
+  ...chat,
+  latestMessage: latestMessageMap.get(chat.id)?.message,
+  latestMessageTime: latestMessageMap.get(chat.id)?.created_at,
+}));
+
+setChats(enrichedChats);
   };
 
   const refreshAdmin = useCallback(async () => {
@@ -512,11 +570,12 @@ export default function AdminPage() {
             { id: "posts", label: "Posts" },
             { id: "comments", label: "Comments" },
             { id: "chats", label: "Support Chats" },
+            { id: "announcements", label: "TeaTame Posts" },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id as "posts" | "comments" | "chats")}
+              onClick={() => setActiveTab(tab.id as "posts" | "comments" | "chats" | "announcements")}
               className={`shrink-0 rounded-full px-4 py-2 text-xs transition active:scale-95 sm:px-5 sm:text-sm ${
                 activeTab === tab.id
                   ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20"
@@ -526,6 +585,31 @@ export default function AdminPage() {
               {tab.label}
             </button>
           ))}
+        {activeTab === "announcements" && (
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl sm:rounded-[2rem]">
+            <h2 className="text-xl font-bold">☕ Post as TeaTame</h2>
+
+            <p className="mt-2 text-sm text-white/45">
+              Publish official announcements that appear in the public feed.
+            </p>
+
+            <textarea
+              value={announcement}
+              onChange={(e) => setAnnouncement(e.target.value)}
+              placeholder="Write an official TeaTame update..."
+              className="mt-5 min-h-40 w-full rounded-3xl border border-white/10 bg-black/25 p-4 text-white outline-none placeholder:text-white/35 focus:border-purple-300/40"
+            />
+
+            <button
+              type="button"
+              onClick={postAsTeaTame}
+              disabled={!announcement.trim() || postingAnnouncement}
+              className="mt-4 rounded-2xl bg-purple-500 px-5 py-3 font-semibold transition hover:bg-purple-400 disabled:opacity-50"
+            >
+              {postingAnnouncement ? "Posting..." : "Publish Announcement"}
+            </button>
+          </div>
+        )}
         </div>
 
         {statusMessage && (
@@ -622,10 +706,13 @@ export default function AdminPage() {
                       <h3 className="truncate font-semibold">
                         {chat.anonymous_users?.anonymous_name || "Anonymous User"}
                       </h3>
-                      <p className="truncate text-xs text-white/40">{formatDate(chat.created_at)}</p>
-                      <p className="mt-1 truncate text-xs text-purple-200/70">
-                        Open full user + AI conversation
-                      </p>
+<p className="truncate text-xs text-white/40">
+  {formatDate(chat.latestMessageTime || chat.created_at)}
+</p>
+
+<p className="mt-1 truncate text-xs text-purple-200/70">
+  {chat.latestMessage || "No messages"}
+</p>
                     </div>
                   </div>
                 </button>

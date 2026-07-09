@@ -22,6 +22,8 @@ type TeaCardProps = {
     type: string;
     name?: string;
   }[];
+  isAdminPost?: boolean;
+  adminName?: string | null;
 };
 
 const anonymousAnimals = [
@@ -66,6 +68,8 @@ export default function TeaCard({
   mediaUrl,
   mediaType,
   mediaItems,
+  isAdminPost = false,
+  adminName,
 }: TeaCardProps) {
   const likeKey = `TeaTame_liked_${id}`;
   const [likesCount, setLikesCount] = useState(likes);
@@ -160,8 +164,10 @@ export default function TeaCard({
   const visibleMedia = displayMedia.slice(0, 4);
   const extraMediaCount = Math.max(displayMedia.length - visibleMedia.length, 0);
 
-  const displayAuthor = getStableAnonymousName(id, author);
-  const displayEmoji = getAuthorEmoji(displayAuthor, emoji);
+  const displayAuthor = isAdminPost
+    ? adminName || "TeaTame"
+    : getStableAnonymousName(id, author);
+  const displayEmoji = isAdminPost ? "☕" : getAuthorEmoji(displayAuthor, emoji);
   const hasVoiceTea = displayMedia.some((item) => item.type === "audio");
   const onlyVoiceTea = displayMedia.length > 0 && displayMedia.every((item) => item.type === "audio");
   const isHotTea = likesCount >= 10;
@@ -192,14 +198,14 @@ export default function TeaCard({
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold md:text-base">{displayAuthor}</h3>
             <p className="truncate text-xs text-white/40 md:text-sm">
-              {time} • {type}
+              {isAdminPost ? "Official TeaTame post" : `${time} • ${type}`}
             </p>
           </div>
         </div>
 
-        {highlightBadge && (
+        {(isAdminPost || highlightBadge) && (
           <span className="shrink-0 rounded-full border border-purple-300/20 bg-purple-500/10 px-2.5 py-1 text-[10px] font-medium text-purple-100 sm:px-3 sm:text-[11px]">
-            {highlightBadge}
+            {isAdminPost ? "✓ Official" : highlightBadge}
           </span>
         )}
       </div>

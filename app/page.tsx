@@ -18,6 +18,8 @@ type TeaPost = {
   media_url: string | null;
   media_type: string | null;
   category: string | null;
+  is_admin_post?: boolean | null;
+  admin_name?: string | null;
   media_items: {
     url: string;
     type: string;
@@ -87,6 +89,8 @@ export default function Home() {
             media_url,
             media_type,
             category,
+            is_admin_post,
+            admin_name,
             media_items,
             anonymous_users (
               anonymous_name,
@@ -321,8 +325,9 @@ export default function Home() {
 
             {!loadingPosts &&
               visiblePosts.map((post) => {
-                const author =
-                  post.anonymous_users?.anonymous_name &&
+                const author = post.is_admin_post
+                  ? post.admin_name || "TeaTame"
+                  : post.anonymous_users?.anonymous_name &&
                     post.anonymous_users.anonymous_name !== "Anonymous User"
                     ? post.anonymous_users.anonymous_name
                     : "Anonymous Bear 🐻";
@@ -341,6 +346,8 @@ export default function Home() {
                     mediaUrl={post.media_url}
                     mediaType={post.media_type}
                     mediaItems={post.media_items || []}
+                    isAdminPost={post.is_admin_post || false}
+                    adminName={post.admin_name}
                   />
                 );
               })}
@@ -397,8 +404,9 @@ export default function Home() {
               )}
 
               {trendingPosts.map((post, index) => {
-                const author =
-                  post.anonymous_users?.anonymous_name &&
+                const author = post.is_admin_post
+                  ? post.admin_name || "TeaTame"
+                  : post.anonymous_users?.anonymous_name &&
                     post.anonymous_users.anonymous_name !== "Anonymous User"
                     ? post.anonymous_users.anonymous_name
                     : "Anonymous Bear 🐻";
