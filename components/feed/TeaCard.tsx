@@ -166,7 +166,21 @@ export default function TeaCard({
   const onlyVoiceTea = displayMedia.length > 0 && displayMedia.every((item) => item.type === "audio");
   const isHotTea = likesCount >= 10;
   const isDiscussedTea = comments >= 5;
-  const highlightBadge = isHotTea ? "🔥 Hot" : isDiscussedTea ? "💬 Discussed" : "🆕 New";
+  const lowerTime = time.toLowerCase();
+  const isNewTea =
+    lowerTime.includes("just now") ||
+    lowerTime.includes("now") ||
+    lowerTime.includes("min") ||
+    lowerTime.startsWith("1h") ||
+    lowerTime.includes("1 hour");
+  const highlightBadge = isHotTea
+    ? "🔥 Hot"
+    : isDiscussedTea
+      ? "💬 Discussed"
+      : isNewTea
+        ? "🆕 New"
+        : null;
+  const shouldShowReadMore = content.trim().length > 180 || content.split(/\n+/).length > 4;
 
   return (
     <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-4 shadow-xl shadow-purple-500/5 backdrop-blur-xl transition duration-300 active:scale-[0.99] hover:border-purple-400/40 hover:bg-white/[0.075] hover:shadow-purple-500/10 sm:rounded-[2rem] sm:p-5 md:p-5">
@@ -183,9 +197,11 @@ export default function TeaCard({
           </div>
         </div>
 
-        <span className="shrink-0 rounded-full border border-purple-300/20 bg-purple-500/10 px-2.5 py-1 text-[10px] font-medium text-purple-100 sm:px-3 sm:text-[11px]">
-          {highlightBadge}
-        </span>
+        {highlightBadge && (
+          <span className="shrink-0 rounded-full border border-purple-300/20 bg-purple-500/10 px-2.5 py-1 text-[10px] font-medium text-purple-100 sm:px-3 sm:text-[11px]">
+            {highlightBadge}
+          </span>
+        )}
       </div>
 
       {content && (
@@ -197,7 +213,7 @@ export default function TeaCard({
         </Link>
       )}
 
-      {content && (
+      {content && shouldShowReadMore && (
         <Link
           href={`/tea/${id}`}
           className="mt-1 inline-flex text-xs font-medium text-purple-200/80 transition hover:text-purple-100"
