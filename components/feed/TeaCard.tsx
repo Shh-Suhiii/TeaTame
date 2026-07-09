@@ -180,7 +180,7 @@ export default function TeaCard({
       : isNewTea
         ? "🆕 New"
         : null;
-  const shouldShowReadMore = content.trim().length > 160 || content.split(/\n+/).length > 3;
+  const shouldShowReadMore = content.trim().length > 90 || content.split(/\n+/).length > 3;
 
   return (
     <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-4 shadow-xl shadow-purple-500/5 backdrop-blur-xl transition duration-300 active:scale-[0.99] hover:border-purple-400/40 hover:bg-white/[0.075] hover:shadow-purple-500/10 sm:rounded-[2rem] sm:p-5 md:p-5">
