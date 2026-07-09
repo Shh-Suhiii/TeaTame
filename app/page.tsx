@@ -68,6 +68,7 @@ export default function Home() {
 
   const [teaPosts, setTeaPosts] = useState<TeaPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [visiblePostCount, setVisiblePostCount] = useState(8);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -137,9 +138,16 @@ export default function Home() {
     return matchesSearch && matchesCategory;
   });
 
+  const visiblePosts = filteredPosts.slice(0, visiblePostCount);
+  const hasMorePosts = visiblePostCount < filteredPosts.length;
+
   const trendingPosts = [...teaPosts]
     .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
     .slice(0, 3);
+
+  useEffect(() => {
+    setVisiblePostCount(8);
+  }, [searchQuery, selectedCategory]);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#0c0611] text-white">
@@ -147,19 +155,21 @@ export default function Home() {
 
       <Navbar />
 
-      <section className="mx-auto grid w-full max-w-full gap-3 px-3 pb-36 pt-3 sm:max-w-6xl sm:gap-4 sm:px-5 sm:py-6 lg:grid-cols-[1fr_320px]">
-        <div className="min-w-0 space-y-3 sm:space-y-5">
-          <div className="rounded-[1.75rem] border border-purple-300/15 bg-gradient-to-br from-purple-500/15 via-white/[0.055] to-fuchsia-500/10 p-4 shadow-[0_18px_70px_rgba(168,85,247,0.16)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5">
+      <section className="mx-auto grid w-full max-w-full gap-5 px-3.5 pb-40 pt-3.5 sm:max-w-6xl sm:gap-5 sm:px-5 sm:py-6 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-4 sm:space-y-5">
+          <div className="relative overflow-hidden rounded-[2rem] border border-purple-300/15 bg-gradient-to-br from-purple-500/16 via-white/[0.06] to-fuchsia-500/10 p-5 shadow-[0_18px_70px_rgba(168,85,247,0.16)] backdrop-blur-xl sm:p-5">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-purple-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 left-10 h-32 w-32 rounded-full bg-fuchsia-500/10 blur-3xl" />
             <div className="flex items-start justify-between gap-2.5 sm:gap-3">
               <div className="min-w-0 flex-1">
                 <p className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-purple-300/25 bg-purple-400/15 px-3 py-1.5 text-[10px] font-medium text-purple-100 sm:mb-3 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
                   <Sparkles size={14} />
                   Anonymous feed
                 </p>
-                <h2 className="max-w-2xl text-[2.05rem] font-black leading-[1.02] tracking-tight sm:text-4xl md:text-5xl">
+                <h2 className="max-w-2xl text-[2.25rem] font-black leading-[1.04] tracking-tight sm:text-4xl md:text-5xl">
                   What&apos;s the tea?
                 </h2>
-                <p className="mt-2 max-w-2xl text-[12px] leading-5 text-white/62 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
+                <p className="mt-2.5 max-w-2xl text-[13px] leading-6 text-white/62 sm:mt-3 sm:text-base sm:leading-7 sm:text-white/60">
                   Spill anonymously. No names. No judgments.
                 </p>
               </div>
@@ -173,8 +183,8 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-4 flex flex-col gap-2 rounded-[1.35rem] border border-white/10 bg-black/30 p-2.5 sm:mt-5 sm:flex-row sm:rounded-3xl sm:p-3">
-              <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/[0.08] px-3.5 py-3.5 text-white/40 sm:gap-3 sm:px-4 sm:py-3">
+            <div className="mt-5 flex flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-black/30 p-3 sm:flex-row sm:rounded-3xl">
+              <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/[0.08] px-4 py-4 text-white/40 sm:gap-3 sm:py-3">
                 <Search size={18} />
                 <input
                   value={searchQuery}
@@ -190,15 +200,29 @@ export default function Home() {
                 Spill Your Tea
               </Link>
             </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:hidden">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-2 text-center">
+                <p className="text-sm font-bold tabular-nums">{teaPosts.length}</p>
+                <p className="text-[10px] text-white/35">Teas</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-2 text-center">
+                <p className="text-sm font-bold">24/7</p>
+                <p className="text-[10px] text-white/35">Anonymous</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-2 text-center">
+                <p className="text-sm font-bold">No ID</p>
+                <p className="text-[10px] text-white/35">Needed</p>
+              </div>
+            </div>
           </div>
 
-          <div className="sticky top-[72px] z-10 -mx-3 flex snap-x gap-2 overflow-x-auto border-y border-white/5 bg-[#0c0611]/95 px-4 py-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl [scroll-padding-inline:1rem] [scrollbar-width:none] sm:static sm:mx-0 sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-0 [&::-webkit-scrollbar]:hidden">
+          <div className="sticky top-[68px] z-10 -mx-3.5 flex snap-x gap-2.5 overflow-x-auto border-y border-white/5 bg-[#0c0611]/95 px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl [scroll-padding-inline:1rem] [scrollbar-width:none] sm:static sm:mx-0 sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-0 [&::-webkit-scrollbar]:hidden">
             <span className="w-0.5 shrink-0 sm:hidden" aria-hidden="true" />
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`shrink-0 snap-start rounded-full border px-4 py-2.5 text-xs font-semibold shadow-sm transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${
+                className={`shrink-0 snap-start rounded-full border px-[1.125rem] py-3 text-xs font-semibold shadow-sm transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${
                   selectedCategory === category
                     ? "border-purple-300/40 bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/30"
                     : "border-white/10 bg-white/[0.065] text-white/70 hover:border-purple-300/40 hover:bg-white/[0.09] hover:text-white"
@@ -210,19 +234,21 @@ export default function Home() {
             <span className="w-0.5 shrink-0 sm:hidden" aria-hidden="true" />
           </div>
 
-          <div className="flex items-center justify-between px-1 pt-1.5">
-            <div>
-              <h3 className="text-lg font-black text-white/95">Latest Teas</h3>
-              <p className="text-[11px] text-white/35">Fresh anonymous posts</p>
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] px-4 py-3 backdrop-blur-xl sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:backdrop-blur-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-white/95">Latest Teas</h3>
+                <p className="text-[11px] text-white/35">Fresh anonymous posts</p>
+              </div>
+              <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/50">
+                {filteredPosts.length} {filteredPosts.length === 1 ? "post" : "posts"}
+              </span>
             </div>
-            <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/50">
-              {filteredPosts.length} {filteredPosts.length === 1 ? "post" : "posts"}
-            </span>
           </div>
 
-          <div className="space-y-4 sm:space-y-5">
+          <div className="space-y-5 sm:space-y-5">
             {loadingPosts && (
-              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl sm:rounded-[2rem] sm:p-6 flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-6 backdrop-blur-xl sm:rounded-[2rem]">
                 <span className="mb-3 flex items-center justify-center">
                   <span className="h-4 w-4 rounded-full bg-purple-500 animate-pulse" />
                 </span>
@@ -231,7 +257,7 @@ export default function Home() {
             )}
 
             {!loadingPosts && filteredPosts.length === 0 && (
-              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-5 text-center backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-6 text-center backdrop-blur-xl sm:rounded-[2rem]">
                 <h3 className="text-xl font-bold">☕ No tea found</h3>
                 <p className="mt-2 text-white/55">Try another search or category.</p>
                 <p className="mt-1 text-xs text-white/35">Be the first to spill the tea ☕</p>
@@ -239,7 +265,7 @@ export default function Home() {
             )}
 
             {!loadingPosts &&
-              filteredPosts.map((post) => {
+              visiblePosts.map((post) => {
                 const author =
                   post.anonymous_users?.anonymous_name &&
                   post.anonymous_users.anonymous_name !== "Anonymous User"
@@ -263,6 +289,16 @@ export default function Home() {
                   />
                 );
               })}
+
+            {!loadingPosts && hasMorePosts && (
+              <button
+                type="button"
+                onClick={() => setVisiblePostCount((prev) => prev + 8)}
+                className="w-full rounded-[1.35rem] border border-purple-300/20 bg-purple-500/10 px-5 py-4 text-sm font-semibold text-purple-100 shadow-lg shadow-purple-500/10 transition active:scale-[0.99] hover:bg-purple-500/20"
+              >
+                Load more teas
+              </button>
+            )}
           </div>
         </div>
 
