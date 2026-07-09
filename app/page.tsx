@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -65,6 +66,8 @@ export default function Home() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [feedFilter, setFeedFilter] =
+    useState<"latest" | "liked" | "commented">("latest");
 
   const [teaPosts, setTeaPosts] = useState<TeaPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -126,7 +129,7 @@ export default function Home() {
     };
   }, []);
 
-  const filteredPosts = teaPosts.filter((post) => {
+  const filteredPosts = [...teaPosts].filter((post) => {
     const content = post.content?.toLowerCase() || "";
     const search = searchQuery.toLowerCase().trim();
     const category = post.category?.toLowerCase() || "random";
@@ -136,6 +139,19 @@ export default function Home() {
       selectedCategory === "All" ? true : category === selectedCategory.toLowerCase();
 
     return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    if (feedFilter === "liked") {
+      return (b.likes_count || 0) - (a.likes_count || 0);
+    }
+
+    if (feedFilter === "commented") {
+      return (b.comments_count || 0) - (a.comments_count || 0);
+    }
+
+    return (
+      new Date(b.created_at || 0).getTime() -
+      new Date(a.created_at || 0).getTime()
+    );
   });
 
   const visiblePosts = filteredPosts.slice(0, visiblePostCount);
@@ -145,9 +161,6 @@ export default function Home() {
     .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
     .slice(0, 3);
 
-  useEffect(() => {
-    setVisiblePostCount(8);
-  }, [searchQuery, selectedCategory]);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#0c0611] text-white">
@@ -188,7 +201,11 @@ export default function Home() {
                 <Search size={18} />
                 <input
                   value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    setVisiblePostCount(8);
+                    setFeedFilter("latest");
+                  }}
                   placeholder="Search anonymous tea..."
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base"
                 />
@@ -207,10 +224,10 @@ export default function Home() {
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-2 text-center">
                 <p className="text-sm font-bold">24/7</p>
-                <p className="text-[10px] text-white/35">Anonymous</p>
+                <p className="text-[10px] text-white/35">Live Feed</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-2 text-center">
-                <p className="text-sm font-bold">No ID</p>
+                <p className="text-sm font-bold">Private</p>
                 <p className="text-[10px] text-white/35">Needed</p>
               </div>
             </div>
@@ -221,12 +238,15 @@ export default function Home() {
             {categories.map((category) => (
               <button
                 key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`shrink-0 snap-start rounded-full border px-[1.125rem] py-3 text-xs font-semibold shadow-sm transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${
-                  selectedCategory === category
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setVisiblePostCount(8);
+                  setFeedFilter("latest");
+                }}
+                className={`shrink-0 snap-start rounded-full border px-[1.125rem] py-3 text-xs font-semibold shadow-sm transition active:scale-95 sm:px-5 sm:py-2 sm:text-sm ${selectedCategory === category
                     ? "border-purple-300/40 bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-lg shadow-purple-500/30"
                     : "border-white/10 bg-white/[0.065] text-white/70 hover:border-purple-300/40 hover:bg-white/[0.09] hover:text-white"
-                }`}
+                  }`}
               >
                 {category}
               </button>
@@ -234,10 +254,42 @@ export default function Home() {
             <span className="w-0.5 shrink-0 sm:hidden" aria-hidden="true" />
           </div>
 
+          <div className="-mt-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+  {[
+    { key: "latest", label: "🆕 Latest" },
+    { key: "liked", label: "❤️ Most Liked" },
+    { key: "commented", label: "💬 Discussed" },
+  ].map((filter) => (
+    <button
+      key={filter.key}
+      type="button"
+      onClick={() => {
+        setFeedFilter(
+          filter.key as "latest" | "liked" | "commented"
+        );
+        setVisiblePostCount(8);
+      }}
+      className={`shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition active:scale-95 ${
+        feedFilter === filter.key
+          ? "border-purple-300/30 bg-purple-500/20 text-purple-100"
+          : "border-white/10 bg-white/[0.05] text-white/55 hover:bg-white/[0.08]"
+      }`}
+    >
+      {filter.label}
+    </button>
+  ))}
+</div>
+
           <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] px-4 py-3 backdrop-blur-xl sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:backdrop-blur-0">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-black text-white/95">Latest Teas</h3>
+<h3 className="text-lg font-black text-white/95">
+  {feedFilter === "liked"
+    ? "Most Liked"
+    : feedFilter === "commented"
+    ? "Most Discussed"
+    : "Latest Teas"}
+</h3>
                 <p className="text-[11px] text-white/35">Fresh anonymous posts</p>
               </div>
               <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/50">
@@ -268,7 +320,7 @@ export default function Home() {
               visiblePosts.map((post) => {
                 const author =
                   post.anonymous_users?.anonymous_name &&
-                  post.anonymous_users.anonymous_name !== "Anonymous User"
+                    post.anonymous_users.anonymous_name !== "Anonymous User"
                     ? post.anonymous_users.anonymous_name
                     : "Anonymous Bear 🐻";
 
@@ -344,7 +396,7 @@ export default function Home() {
               {trendingPosts.map((post, index) => {
                 const author =
                   post.anonymous_users?.anonymous_name &&
-                  post.anonymous_users.anonymous_name !== "Anonymous User"
+                    post.anonymous_users.anonymous_name !== "Anonymous User"
                     ? post.anonymous_users.anonymous_name
                     : "Anonymous Bear 🐻";
 
