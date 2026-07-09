@@ -427,14 +427,13 @@ setChats(enrichedChats);
     if (!selectedChat || !reply.trim()) return;
 
     const replyText = reply.trim();
-    const localAdminMessageId = `admin-${Date.now()}`;
     setReply("");
 
     const { data: adminMessage, error } = await supabase
       .from("messages")
       .insert({
         chat_id: selectedChat.id,
-        sender_id: localAdminMessageId,
+        sender_id: null,
         message: `[ADMIN] ${replyText}`,
       })
       .select("id, sender_id, message, created_at")
@@ -585,8 +584,10 @@ setChats(enrichedChats);
               {tab.label}
             </button>
           ))}
+        </div>
+
         {activeTab === "announcements" && (
-          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl sm:rounded-[2rem]">
+          <div className="mx-auto w-full max-w-2xl rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl sm:rounded-[2rem]">
             <h2 className="text-xl font-bold">☕ Post as TeaTame</h2>
 
             <p className="mt-2 text-sm text-white/45">
@@ -597,20 +598,19 @@ setChats(enrichedChats);
               value={announcement}
               onChange={(e) => setAnnouncement(e.target.value)}
               placeholder="Write an official TeaTame update..."
-              className="mt-5 min-h-40 w-full rounded-3xl border border-white/10 bg-black/25 p-4 text-white outline-none placeholder:text-white/35 focus:border-purple-300/40"
+              className="mt-5 min-h-40 w-full resize-none rounded-3xl border border-white/10 bg-black/25 p-4 text-white outline-none placeholder:text-white/35 focus:border-purple-300/40"
             />
 
             <button
               type="button"
               onClick={postAsTeaTame}
               disabled={!announcement.trim() || postingAnnouncement}
-              className="mt-4 rounded-2xl bg-purple-500 px-5 py-3 font-semibold transition hover:bg-purple-400 disabled:opacity-50"
+              className="mt-4 rounded-2xl bg-purple-500 px-5 py-3 font-semibold transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {postingAnnouncement ? "Posting..." : "Publish Announcement"}
             </button>
           </div>
         )}
-        </div>
 
         {statusMessage && (
           <div className="rounded-2xl border border-purple-300/20 bg-purple-500/10 px-4 py-3 text-sm text-purple-100">
