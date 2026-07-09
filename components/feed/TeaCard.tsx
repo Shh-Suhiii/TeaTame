@@ -164,9 +164,12 @@ export default function TeaCard({
   const displayEmoji = getAuthorEmoji(displayAuthor, emoji);
   const hasVoiceTea = displayMedia.some((item) => item.type === "audio");
   const onlyVoiceTea = displayMedia.length > 0 && displayMedia.every((item) => item.type === "audio");
+  const isHotTea = likesCount >= 10;
+  const isDiscussedTea = comments >= 5;
+  const highlightBadge = isHotTea ? "🔥 Hot" : isDiscussedTea ? "💬 Discussed" : "🆕 New";
 
   return (
-    <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-3.5 shadow-xl shadow-purple-500/5 backdrop-blur-xl transition hover:border-purple-300/30 hover:bg-white/[0.075] sm:rounded-[2rem] sm:p-4 md:p-5">
+    <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-4 shadow-xl shadow-purple-500/5 backdrop-blur-xl transition duration-300 active:scale-[0.99] hover:border-purple-400/40 hover:bg-white/[0.075] hover:shadow-purple-500/10 sm:rounded-[2rem] sm:p-5 md:p-5">
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-2xl bg-purple-500/15 text-lg ring-1 ring-purple-300/10 sm:h-11 sm:w-11 sm:text-xl">
@@ -180,17 +183,26 @@ export default function TeaCard({
           </div>
         </div>
 
-        <span className="hidden shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/45 min-[380px]:inline-flex">
-          Anonymous
+        <span className="shrink-0 rounded-full border border-purple-300/20 bg-purple-500/10 px-2.5 py-1 text-[10px] font-medium text-purple-100 sm:px-3 sm:text-[11px]">
+          {highlightBadge}
         </span>
       </div>
 
       {content && (
         <Link
           href={`/tea/${id}`}
-          className="mt-3 block line-clamp-4 whitespace-pre-wrap break-words text-[15px] leading-7 text-white/85 transition hover:text-white active:scale-[0.995] [overflow-wrap:anywhere] sm:mt-4 md:text-lg md:leading-8"
+          className="mt-3 block line-clamp-4 whitespace-pre-wrap break-words rounded-2xl text-[15px] leading-7 text-white/85 transition hover:text-white active:scale-[0.995] [overflow-wrap:anywhere] sm:mt-4 md:text-lg md:leading-8"
         >
           {content}
+        </Link>
+      )}
+
+      {content && (
+        <Link
+          href={`/tea/${id}`}
+          className="mt-1 inline-flex text-xs font-medium text-purple-200/80 transition hover:text-purple-100"
+        >
+          Read full tea →
         </Link>
       )}
 
@@ -271,7 +283,7 @@ export default function TeaCard({
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white/90">Voice Tea</p>
-              <p className="text-xs text-white/45">Tap to listen anonymously</p>
+              <p className="text-xs text-white/45">Anonymous voice note</p>
             </div>
           </div>
           <span className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-white/70">
@@ -291,7 +303,11 @@ export default function TeaCard({
               : "bg-white/5 text-white/70 hover:text-white"
           }`}
         >
-          <Heart size={17} fill={isLiked ? "currentColor" : "none"} />
+          <Heart
+            size={17}
+            className={isLiked ? "scale-110 transition" : "transition"}
+            fill={isLiked ? "currentColor" : "none"}
+          />
           {likesCount}
         </button>
 
@@ -300,12 +316,13 @@ export default function TeaCard({
           className="flex items-center justify-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-sm text-white/70 transition active:scale-95 hover:bg-white/10 hover:text-white"
         >
           <MessageCircle size={17} />
-          {comments} comments
+          {comments}
+          <span className="hidden min-[360px]:inline">comments</span>
         </Link>
 
         <Link
           href="/chat"
-          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-purple-300/25 px-3 py-1.5 text-sm text-purple-100 transition active:scale-95 hover:bg-purple-500/15 sm:ml-auto"
+          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-purple-300/25 bg-purple-500/5 px-3 py-1.5 text-sm text-purple-100 transition active:scale-95 hover:bg-purple-500/15 sm:ml-auto"
         >
           <Headphones size={16} />
           Talk to Admin
@@ -352,7 +369,7 @@ export default function TeaCard({
               <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 p-5 text-center sm:min-h-[260px] sm:p-6">
                 <div className="text-5xl">🎤</div>
                 <h3 className="text-xl font-bold text-white">Voice Tea</h3>
-                <p className="text-sm text-white/50">Tap play to listen anonymously</p>
+                <p className="text-sm text-white/50">Anonymous voice note</p>
                 <audio src={previewMedia.url} controls className="w-full max-w-xl" />
               </div>
             )}
