@@ -184,9 +184,12 @@ export default function TeaCard({
       </div>
 
       {content && (
-        <p className="mt-3 line-clamp-4 whitespace-pre-wrap break-words text-[15px] leading-7 text-white/85 [overflow-wrap:anywhere] sm:mt-4 md:text-lg md:leading-8">
+        <Link
+          href={`/tea/${id}`}
+          className="mt-3 block line-clamp-4 whitespace-pre-wrap break-words text-[15px] leading-7 text-white/85 transition hover:text-white active:scale-[0.995] [overflow-wrap:anywhere] sm:mt-4 md:text-lg md:leading-8"
+        >
           {content}
-        </p>
+        </Link>
       )}
 
       {displayMedia.length > 0 && (

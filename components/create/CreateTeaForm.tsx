@@ -183,6 +183,7 @@ export default function CreateTeaForm() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -355,8 +356,10 @@ export default function CreateTeaForm() {
     setContent("");
     setCategory("Random");
     setActiveType("text");
-    setVoiceEffect("normal");
     setSelectedFiles([]);
+    setOriginalRecordedAudioBlob(null);
+    setVoiceEffect("normal");
+    setProcessingVoiceEffect(false);
     setRecordedAudioUrl((prevUrl) => {
       if (prevUrl) URL.revokeObjectURL(prevUrl);
       return "";
@@ -454,6 +457,11 @@ export default function CreateTeaForm() {
 
     clearForm();
     setStatusMessage("Tea posted successfully ☕");
+    setShowSuccessPopup(true);
+
+    window.setTimeout(() => {
+      setShowSuccessPopup(false);
+    }, 2200);
   };
 
   return (
@@ -486,8 +494,8 @@ export default function CreateTeaForm() {
               type="button"
               onClick={() => handleTypeSelect(type.value)}
               className={`rounded-[1.25rem] border p-3 text-left transition active:scale-[0.98] sm:rounded-3xl md:p-5 ${activeType === type.value
-                  ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
-                  : "border-white/10 bg-black/20 hover:border-purple-300/40 hover:bg-purple-500/10"
+                ? "border-purple-300/40 bg-purple-500/20 shadow-lg shadow-purple-500/10"
+                : "border-white/10 bg-black/20 hover:border-purple-300/40 hover:bg-purple-500/10"
                 }`}
             >
               <Icon size={20} className="mb-2 text-purple-200 sm:mb-3" />
@@ -536,8 +544,8 @@ export default function CreateTeaForm() {
               type="button"
               onClick={() => setCategory(item)}
               className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition active:scale-95 md:text-sm ${category === item
-                  ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
-                  : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
+                ? "border-purple-300/40 bg-purple-500 text-white shadow-lg shadow-purple-500/20"
+                : "border-white/10 bg-white/[0.06] text-white/70 hover:border-purple-300/40 hover:text-white"
                 }`}
             >
               {item}
@@ -552,7 +560,7 @@ export default function CreateTeaForm() {
         placeholder="Spill your tea here... add caption, context, or story."
         className="min-h-32 w-full resize-none rounded-[1.35rem] border border-white/10 bg-black/25 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-purple-300/40 focus:bg-black/30 sm:rounded-3xl sm:p-5 sm:text-base md:min-h-44"
       />
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] leading-4 text-white/45 sm:text-xs">
+      <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] leading-4 text-white/45 sm:mb-5 sm:text-xs">
         Keep it anonymous. Avoid real names, phone numbers, addresses, or personal details.
       </div>
 
@@ -612,8 +620,8 @@ export default function CreateTeaForm() {
                   setVoiceEffect(effect.value);
                 }}
                 className={`rounded-2xl border px-3 py-2 text-xs transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${voiceEffect === effect.value
-                    ? "border-purple-300/40 bg-purple-500/20 text-purple-100"
-                    : "border-white/10 bg-white/[0.05] text-white/60 hover:bg-white/[0.08]"
+                  ? "border-purple-300/40 bg-purple-500/20 text-purple-100"
+                  : "border-white/10 bg-white/[0.05] text-white/60 hover:bg-white/[0.08]"
                   }`}
               >
                 {effect.label}
@@ -625,6 +633,18 @@ export default function CreateTeaForm() {
               </button>
             ))}
           </div>
+
+          {originalRecordedAudioBlob && (
+            <p className="mt-2 text-xs text-white/40">
+              Tap any effect to preview and replace the recorded voice.
+            </p>
+          )}
+
+          {processingVoiceEffect && (
+            <p className="mt-2 text-xs text-purple-200">
+              Applying voice effect...
+            </p>
+          )}
 
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             {!isRecording && (
@@ -725,11 +745,21 @@ export default function CreateTeaForm() {
           {statusMessage}
         </div>
       )}
+      {showSuccessPopup && (
+  <div className="fixed left-1/2 top-6 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-3xl border border-purple-300/25 bg-[#16091f]/95 px-5 py-4 text-center shadow-[0_20px_70px_rgba(168,85,247,0.28)] backdrop-blur-xl sm:top-8">
+    <p className="text-lg font-bold text-white">
+      Tea posted successfully ☕
+    </p>
+    <p className="mt-1 text-sm text-white/55">
+      Your anonymous tea is live.
+    </p>
+  </div>
+)}
       <button
         type="button"
         onClick={handleSubmit}
         disabled={loading || (!content.trim() && selectedFiles.length === 0)}
-        className="sticky bottom-24 z-10 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50 sm:static"
+        className="sticky bottom-24 z-10 mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-4 font-semibold shadow-lg shadow-purple-500/25 transition active:scale-[0.99] hover:from-purple-400 hover:to-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50 sm:static sm:static sm:mt-7"
       >
         <Send size={18} />
         {loading ? "Posting..." : "Post Tea"}
